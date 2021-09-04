@@ -9,7 +9,7 @@ for now I have choosen to have the x and y values as separate values to keep thi
 copy pathbuilder.scad to your openSCAD library folder
 put 
 ```
-use <curves.scad>
+use <pathbuilder.scad>
 ```
 at the top of your code unit and you are ready to go.
 
