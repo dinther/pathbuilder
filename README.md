@@ -22,14 +22,72 @@ linear_extrude(3) s(0,0, 32) f(2) h(20) c(8) v(10) r(10, 10, 10) h(10) f(2) v(-1
 Commands currently implemented:
 
 ```
-s - start
+s(x,y,$fn) - start
 initialises the pathbuilder at your first [x,y] point
 s(10,0,$fn)
 ```
 ```
-d - distance
+d(d) - distance
 Adds a point at distance d relative from the last point in the last direction.
 This command assumes the direction angle is zero when less then two points are defined
 d(100)
-'''
-
+```
+```
+l(x,y) - line
+Adds a point x,y relative from the last point
+l(13,7)
+```
+```
+l(x,y) - line
+Adds a point with the given absolute coordinates x,y
+l(13,7)
+```
+```
+h(x) - horizontal
+Adds a point relative from the last point along the horizontal x axis
+h(5)
+```
+H(x) - Horizontal
+Adds a point along the horizontal x axis at an absolute x coordinate.
+H(8)
+```
+```
+v(y) - vertical
+Adds a point relative from the last point along the vertical y axis
+v(6)
+```
+V(y) - Vertical
+Adds a point along the vertical x axis at an absolute y coordinate.
+V(28)
+```
+```
+r(x,y,r) - round
+Adds multiple points to form a circle segment from the last point to relative point x,y with given radius
+An error is shown if the radius is less than half the distance between the two points.
+You can flip the circle segment inside out by changing the radius to negative
+r(x,y,r)
+```
+```
+R(x,y,r) - Round
+Adds multiple points to form a circle segment from the last point to absolute point x,y with given radius
+An error is shown if the radius is less than half the distance between the two points.
+You can flip the circle segment inside out by changing the radius to negative
+R(x,y,r)
+```
+```
+f(r, flip=false, $fn=$fn) - fillet
+Creates a fillet at the current point with the given radius. set Flip=true to turn the fillet outwards.
+The actual fillet is generated during the final draw command as both the incoming and outgoing line vector needs to be defined.
+You can override the $fn value at this point.
+V(28)
+```
+```
+c(s) - chamfer
+Inserts a balanced symetrical chamfer with size s on this point.
+V(28)
+```
+```
+draw() - draw
+The final draw command executes the post processing step for the fillets and chamfers, builds the final point list
+and generates a shape using the polygon command.
+```
