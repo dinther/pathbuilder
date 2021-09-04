@@ -19,7 +19,26 @@ The code below produces this left arrow using chamfers, curves and fillets.
 ```
 linear_extrude(3) s(0,0, 32) f(2) h(20) c(8) v(10) r(10, 10, 10) h(10) f(2) v(-10) f(2) l(35,20) f(2) L(40,50) f(2) v(-10) h(-10) R(0,10,-30) draw();
 ```
+## rip and pillage
+If a path builder like this isn't quite your thing but you do want a routine to calculate a chamfer or fillet for your own project. Go and rip it out.
+Useful routines:
 
+```
+function curveBetweenPoints(pt1, pt2, radius, incl_start_pt = true, $fn=$fn)
+```
+Returns a list of points representing the shortest curve between two points with a given radius. There are always two solutions. Make the radius negative to get the other one.
+Set incl_start_pt to false if you don't want the start point in the output list. This avoids doubling up on point coordinates when you build a sequence of curves. This routine will try to stay close to your $fn and $fa settings but it always divides the arc in equal parts.
+```
+function fillet(pts, index, radius, $fn=$fn)
+```
+Returns a list of points representing an arc with a given radius that is the tangent to pt1 and pt2 also known as a fillet.
+Set the radius to negative if you want the arc to bulge outward.
+```
+function chamfer(pts, index, size)
+```
+Returns a list of two points for a balanced symetrical chamfer of size for the given point in point list pts defined by index.
+
+##Commands
 Commands currently implemented:
 
 ```
