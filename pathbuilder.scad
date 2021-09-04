@@ -1,4 +1,4 @@
-//  turtle
+//  pathbuilder
 //
 //  This libray is designed to create complex 2D shapes
 //  It uses commands similar to the svg path syntax
@@ -11,6 +11,7 @@
 //  Lowercase commands are drawn relative to the last drawn point.
 //  Uppercase commands are drawn as absolute coordinates.
 //
+//  Latest version here: https://github.com/dinther/pathbuilder
 //
 //  By: Paul van Dinther
 
@@ -91,68 +92,68 @@ function curveBetweenPoints(pt1, pt2, radius, incl_start_pt = true, $fn=$fn) = l
     pts = concat(incl_start_pt? [pt1]: [],[for(i=[1:steps-1]) [sin(a1 + (step_angle * i)) * r + pc[0], cos(a1 + (step_angle * i)) * r + pc[1]]],[pt2])
 ) pts;
 
-//  Initialise the turtle with the s command. It initialises the global point list $turtle_pts with [[x,y]]
+//  Initialise the pathbuilder with the s command. It initialises the global point list $pb__pts with [[x,y]]
 module s(x, y, $fn=$fn){
-    $turtle_pts = [[x,y]];
-    $turtle_spec = [[0,0,0]];  //  start tag
+    $pb__pts = [[x,y]];
+    $pb__spec = [[0,0,0]];  //  start tag
     children();
 }
 
 //  Adds a point at distance d relative from the last point in the last direction.
 //  This command assumes the direction angle is zero when less then two points are defined
 module d(d){
-    l = last($turtle_pts);
-    a = $turtle_pts[1]!= undef? calcExitAngle($turtle_pts) : 0;
+    l = last($pb__pts);
+    a = $pb__pts[1]!= undef? calcExitAngle($pb__pts) : 0;
     n = [l[0] + sin(a) * d, l[1] + cos(a) * d];
-    $turtle_pts = concat($turtle_pts, [n]);
+    $pb__pts = concat($pb__pts, [n]);
     children();
 }
 
-//  Adds a point relative x,y from the last point
+//  Adds a point x,y relative from the last point
 module l(x, y){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [l[0] + x, l[1] + y];
-    $turtle_pts = concat($turtle_pts, [n]);
+    $pb__pts = concat($pb__pts, [n]);
     children();    
 }
 
 //  Adds a point with the given absolute coordinates x,y
 module L(x, y){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [x, y];
-    $turtle_pts = concat($turtle_pts, [n]);
+    $pb__pts = concat($pb__pts, [n]);
     children();    
 }
 
-//  Adds a point horizontally x along from the last point
+//  Adds a point relative from the last point along the horizontal x axis
 module h(x){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [l[0] + x, l[1]];
-    $turtle_pts = concat($turtle_pts, [n]);
+    $pb__pts = concat($pb__pts, [n]);
     children();     
 }
 
-//  Adds a point horizontally from the last point to absolute coordinate x
+//  Adds a point along the horizontal x axis at an absolute x coordinate.
 module H(x){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [x, l[1]];
-    $turtle_pts = concat($turtle_pts, [n]);
+    $pb__pts = concat($pb__pts, [n]);
     children();     
 }
 
 //  Adds a point vertically y along from the last point
 module v(y){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [l[0], l[1] + y];
-    $turtle_pts = concat($turtle_pts, [n]);
+    $pb__pts = concat($pb__pts, [n]);
     children();     
 }
 
 //  Adds a point vertically from the last point to absolute coordinate y
 module V(y){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [l[0], y];
-    $turtle_pts = concat($turtle_pts, [n]);
+    $pb__pts = concat($pb__pts, [n]);
     children();     
 }
 
@@ -160,9 +161,9 @@ module V(y){
 //  An error is shown if the radius is less than half the distance between the two points.
 //  You can flip the circle segment inside out by changing the radius to negative
 module r(x, y, r,  $fn=$fn){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [l[0] + x, l[1] + y];
-    $turtle_pts = r==0? concat($turtle_pts, [n]) : concat($turtle_pts,curveBetweenPoints(l, n, r, false, $fn));
+    $pb__pts = r==0? concat($pb__pts, [n]) : concat($pb__pts,curveBetweenPoints(l, n, r, false, $fn));
     children(); 
 }
 
@@ -170,36 +171,32 @@ module r(x, y, r,  $fn=$fn){
 //  An error is shown if the radius is less than half the distance between the two points.
 //  You can flip the circle segment inside out by changing the radius to negative
 module R(x, y, r){
-    l = last($turtle_pts);
+    l = last($pb__pts);
     n = [x, y];
-    $turtle_pts = r==0? concat($turtle_pts, [n]) : concat($turtle_pts,curveBetweenPoints(l, n, r, false, $fn));
+    $pb__pts = r==0? concat($pb__pts, [n]) : concat($pb__pts,curveBetweenPoints(l, n, r, false, $fn));
     children(); 
 }
 
-//  Creates a fillet at the current point with the given radius. set Flip=true to turn the fillet outwards
-module f(r, flip=false){
-    $turtle_spec = concat($turtle_spec, r==0? [] : [[2,len($turtle_pts)-1,r,flip]]);  //  fillet tag
+//  Inserts a fillet at the current point with the given radius. set Flip=true to turn the fillet outwards
+module f(r, flip=false, $fn=$fn){
+    $pb__spec = concat($pb__spec, r==0? [] : [[2,len($pb__pts)-1,r,flip, $fn]]);  //  fillet tag
     children();  
 }
 
-//  inserts a chamfer with size s on this point
+//  Inserts a chamfer with size s on this point
 module c(s){
-    $turtle_spec = concat($turtle_spec, [[3,len($turtle_pts)-1,s, false]]);  //  fillet tag
+    $pb__spec = concat($pb__spec, [[3,len($pb__pts)-1,s, false]]);  //  fillet tag
     children(); 
 }
 
 //  Draws the final shape of $tutle_pts as a polygon
 module draw(){
-    $turtle_spec = concat($turtle_spec, [[1,len($turtle_pts)-1,0]]);  //end tag
-    $turtle_pts = [for (i = [0: len($turtle_spec)-2]) let(
-        s1   = subList($turtle_pts, $turtle_spec[i][1], $turtle_spec[i+1][1] - ($turtle_spec[i+1][0]==2? 1 : 0)),
-        fill = $turtle_spec[i][0]==2? fillet($turtle_pts, $turtle_spec[i][1], $turtle_spec[i][2],$turtle_spec[i][3]) : [],
-        //cham = $turtle_spec[i][0]==3? fillet($turtle_pts, $turtle_spec[i][1], $turtle_spec[i][2], $turtle_spec[i][3], 4) : []    
-        cham = $turtle_spec[i][0]==3? chamfer($turtle_pts, $turtle_spec[i][1], $turtle_spec[i][2]) : []      
+    $pb__spec = concat($pb__spec, [[1,len($pb__pts)-1,0]]);  //end tag
+    $pb__pts = [for (i = [0: len($pb__spec)-2]) let(
+        s1   = subList($pb__pts, $pb__spec[i][1], $pb__spec[i+1][1] - ($pb__spec[i+1][0]==2? 1 : 0)),
+        fill = $pb__spec[i][0]==2? fillet($pb__pts, $pb__spec[i][1], $pb__spec[i][2],$pb__spec[i][3],$pb__spec[i][4]) : [],
+        cham = $pb__spec[i][0]==3? chamfer($pb__pts, $pb__spec[i][1], $pb__spec[i][2]) : []      
     ) for (p=concat(fill, cham, s1)) p];
-        echo($turtle_pts);
-    polygon($turtle_pts);
+    echo($pb__pts);
+    polygon($pb__pts);
 }
-
-linear_extrude(3) s(0,0, 32) f(2) h(20) c(8) v(10) r(10, 10, 10) h(10) f(2) v(-10) f(2) l(35,20) f(2) L(40,50) f(2) v(-10) h(-10) R(0,10,-30) draw();
-
