@@ -38,9 +38,8 @@ function chamfer(pts, index, size)
 ```
 Returns a list of two points for a balanced symetrical chamfer of size for the given point in point list pts defined by index.
 
-##Commands
-Commands currently implemented:
-
+## Commands
+Commands currently implemented are:
 ```
 s(x,y,$fn) - start
 initialises the pathbuilder at your first [x,y] point
