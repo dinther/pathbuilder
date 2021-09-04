@@ -57,9 +57,9 @@ Adds a point x,y relative from the last point
 l(13,7)
 ```
 ```
-l(x,y) - line
+L(x,y) - line
 Adds a point with the given absolute coordinates x,y
-l(13,7)
+L(13,7)
 ```
 ```
 h(x) - horizontal
