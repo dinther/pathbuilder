@@ -25,8 +25,8 @@ function dist(pt1, pt2) = sqrt(pow(pt2[0] - pt1[0],2) + pow(pt2[1] - pt1[1],2));
 function hypot(pt) = sqrt(pow(pt[0],2)+pow(pt[1],2));                         //  Calculates hypotenuse pythagoras
 function subList(list, s=0, e) = [for(i=[s:max(s,min(e==undef? len(list)-1 : e, len(list) - 1))]) list[i]];  //  Returns subset of list sefined by s start and e end index
 
-//  Calculates tangent fillet for a given point    
-function fillet(pts, index, radius, flip=false, $fn=$fn) = let(
+//  Calculates tangent fillet for a given point. Flip the curve by setting the radius negative.    
+function fillet(pts, index, radius, $fn=$fn) = let(
     a = index==0? pts[len(pts)-1] : pts[index-1],
     b = pts[index],
     c = index == len(pts)-1? pts[0]:pts[index+1],
@@ -36,21 +36,21 @@ function fillet(pts, index, radius, flip=false, $fn=$fn) = let(
     l2 = hypot(bc),
     cos_angle = ba * bc / (l1 * l2),
     tan_half_angle = sqrt((1 - cos_angle) / (1 + cos_angle)),
-    bf_length = radius / tan_half_angle,
+    bf_length = abs(radius) / tan_half_angle,
     ba_u = ba/l1,
     bc_u = bc/l2,
     bf = ba_u*bf_length,
     bg = bc_u*bf_length,
     f = b + bf,
     g = b + bg,
-    sig = sign(ba[0] * bc[1] - ba[1] * bc[0]) * (flip? -1 : 1),
-    ps = curveBetweenPoints(f, g, radius * sig, true, $fn)
-    //Calculate origin
-    //v = ba_u * radius
+    sig = sign(ba[0] * bc[1] - ba[1] * bc[0]) * (radius<0? -1 : 1),
+    ps = curveBetweenPoints(f, g, abs(radius) * sig, true, $fn)
+    //Calculate origin. Uncomment if needed
+    //v = ba_u * abs(radius)
     //o = f + [-v[1] * sig, v[0] * sig] : []
-) ps;
+) ps; //return [ps,o] if you want the curve center point as well.
 
-//  Calculates a chamfer for a given point  
+//  Calculates a balanced symetrical chamfer for a given point  
 function chamfer(pts, index, size) = let(
     a = index==0? pts[len(pts)-1] : pts[index-1],
     b = pts[index],
@@ -177,9 +177,9 @@ module R(x, y, r){
     children(); 
 }
 
-//  Inserts a fillet at the current point with the given radius. set Flip=true to turn the fillet outwards
-module f(r, flip=false, $fn=$fn){
-    $pb__spec = concat($pb__spec, r==0? [] : [[2,len($pb__pts)-1,r,flip, $fn]]);  //  fillet tag
+//  Inserts a fillet at the current point with the given radius. set radius to negative to turn the fillet outwards
+module f(r, $fn=$fn){
+    $pb__spec = concat($pb__spec, r==0? [] : [[2,len($pb__pts)-1,r, $fn]]);  //  fillet tag
     children();  
 }
 
@@ -194,7 +194,7 @@ module draw(){
     $pb__spec = concat($pb__spec, [[1,len($pb__pts)-1,0]]);  //end tag
     $pb__pts = [for (i = [0: len($pb__spec)-2]) let(
         s1   = subList($pb__pts, $pb__spec[i][1], $pb__spec[i+1][1] - ($pb__spec[i+1][0]==2? 1 : 0)),
-        fill = $pb__spec[i][0]==2? fillet($pb__pts, $pb__spec[i][1], $pb__spec[i][2],$pb__spec[i][3],$pb__spec[i][4]) : [],
+        fill = $pb__spec[i][0]==2? fillet($pb__pts, $pb__spec[i][1], $pb__spec[i][2],$pb__spec[i][3]) : [],
         cham = $pb__spec[i][0]==3? chamfer($pb__pts, $pb__spec[i][1], $pb__spec[i][2]) : []      
     ) for (p=concat(fill, cham, s1)) p];
     echo($pb__pts);
