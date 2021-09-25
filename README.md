@@ -14,7 +14,7 @@ use <pathbuilder.scad>
 at the top of your code unit and you are ready to go.
 
 ## example
-![Image of Yaktocat](https://github.com/dinther/pathbuilder/blob/main/images/pathbuilder_right%20arrow.png)
+![Image of right_arrow](https://github.com/dinther/pathbuilder/blob/main/images/pathbuilder_right%20arrow.png)
 The code below produces this left arrow using chamfers, curves and fillets.
 ```
 linear_extrude(3) s(0,0, 32) f(2) h(20) c(8) v(10) r(10, 10, 10) h(10) f(2) v(-10) f(2) l(35,20) f(2) L(40,50) f(2) v(-10) h(-10) R(0,10,-30) draw();
