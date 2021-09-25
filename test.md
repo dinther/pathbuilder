@@ -1,7 +1,7 @@
 just to try stuff
 
 
-```javascript
+```openscad
 function fancyAlert(arg) {
   if(arg) {
     $.facebox({div:'#foo'})
