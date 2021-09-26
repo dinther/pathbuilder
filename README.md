@@ -67,7 +67,7 @@ When using the SVG path syntax in string format you will need to call a function
 |pb_processCommands|`pb_processCommands(command_list)`|Executes the commands in the list and builds up a point list and a post processing list. These two lists are returned in a data list.|
 |pb_postProcessPath|`pb_postProcessPath(data)`|Post processing involves applying fillets and chamfers now the main shape is known. A 2D point list is returned.
 
-Checkout pathbuilderdemo.scad demo 3 which shows a third way to interpret process the svg path string. Here three separate steps are taken to go from path string to 2D point list.
+Checkout [pathbuilderdemo.scad](pathbuilderdemo.scad) demo 3 which shows a third way to interpret process the svg path string. Here three separate steps are taken to go from path string to 2D point list.
 ```
     cmds = pb_tokenizeSvgPath(pb_swoosh);
     data = pb_processCommands(cmds);
