@@ -91,6 +91,7 @@ The commands in this table should be fully compliant with the SVG path syntax.
 |A or a<br>(not ready)|`"a rx ry a lf sf x y"` or<br>`a(rx,ry,a,lf,sf,x,y)` or <br>`a([rx,ry,a,lf,sf,x,y,...])`|Drawn an arc of a ellipse segment to x,y with radii rx and ry with the ellipse rotated to angle a. lf and sf flags select from 4 possible solutions. lf short way (0) or long way(1) and sf: cw (0) or ccw (1)|
 ***
 ![Image of right_arrow](images/ExtendToBoundary.png)
+
 Example of using the forward command with a polyline boundary
 
 ## Extra path commands:
