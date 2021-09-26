@@ -90,9 +90,7 @@ The commands in this table should be fully compliant with the SVG path syntax.
 |T or t|`"t x y"` or `t(x,y)` or `t([x,y,...]`|Draws a smooth quadratic spline continuation to x,y using the control point from the previous quadratic spline. This sequence must start with a regular quadratic spline otherwise you get straight lines.|
 |A or a<br>(not ready)|`"a rx ry a lf sf x y"` or<br>`a(rx,ry,a,lf,sf,x,y)` or <br>`a([rx,ry,a,lf,sf,x,y,...])`|Drawn an arc of a ellipse segment to x,y with radii rx and ry with the ellipse rotated to angle a. lf and sf flags select from 4 possible solutions. lf short way (0) or long way(1) and sf: cw (0) or ccw (1)|
 ***
-![Image of right_arrow](images/ExtendToBoundary.png)
-
-Example of using the forward command with a polyline boundary
+![Image of right_arrow](images/ExtendToBoundary.png)<br>Example of using the forward command with a polyline boundary
 
 ## Extra path commands:
 These are extra commands introduced by Pathbuilder. The command set is not settled yet. In fact, only fillet and chamfer are likely to remain as they are. angle, polar and forward could be rolled into a single command.
