@@ -10,9 +10,9 @@ Pathbuilder is contained in a single .scad file and in has no dependencies on ot
 ```
 use <pathbuilder.scad>
 ```
-at the top of your code unit and you are ready to go. Copy this code into a new blank openSCAD file to make sure it all works.
+at the top of your code unit and you are ready to go. Copy this code into a new blank openSCAD file to make sure it all works. Dont forget to check out the [pathbuilderdemo.scad](pathbuilderdemo.scad) it contains 6 examples on how Pathbuilder can be used.
 
-# Quick test
+### Quick test
 ```
 include <pathbuilder.scad>
 
@@ -32,7 +32,7 @@ Therefore pathbuilder also offers access to every command directly in your code.
 
 Each method has its own benefits and drawbacks. The SVG path string method can create a polygon or return a point list which you can manipulate as desired. But modules also allow a much finer control over the curve segmentation as you can slip in a $fa, $fs or $fn parameter with every command module.
 
-## Rip and pillage
+# Rip and pillage
 If Pathbuilder isn't quite your thing you might still was to have a look at some of the functions. Pathbuilder has no dependencies and the functions have been written as self contained as possible and sensible.
 
 Here are just a few examples:
@@ -51,12 +51,13 @@ function chamfer(pts, index, size)
 ```
 Returns two points for a nice balanced symetrical chamfer of size for a given point in the point list.
 
-## Commands
+# Commands
 Here is a quick overview of the commands implemented so far. Check out the detailed [command documentation in the wiki](https://github.com/dinther/pathbuilder/wiki)
 
-Every path command in Pathbuilder has an uppercase and a lowercase version. This is important as the case defines if the command works in absolute coordinates or relative from the current point. More about this in the wiki. In this overview I ignore the case.
+All path commands that handle x,y coordinates in some way have an uppercase and a lowercase version in Pathbuilder. This is an important distriction because the case defines if the command works in absolute coordinates `(Uppercase)` or relative `(lowercase)` from the current point. More about this in the wiki. In this overview I ignore the case.
 
-SVG Commands currently implemented are:
+## SVG Commands:
+The commands in this table should be fully compliant with the SVG path syntax.
 
 |Command|Code|Description|
 |-------|----|-------|
@@ -69,6 +70,11 @@ SVG Commands currently implemented are:
 |quadratic spline|`"q cx, cy, x, y"` or<br>`q(cx,cy,x,y)` or<br>`q([cx,cy,x,y,...])`|Draws a quadratic spline to x,y. Control point cx,cy is shared between the current point and x,y.|
 |smooth quadratic spline|`"t x y"` or `t(x,y)` or `t([x,y,...]`|Draws a quadratic spline continuation to x,y using the control point from the previous quadratic spline. This sequence must start with a regular quadratic spline otherwise you get straight lines.|
 |arc<br>(not ready)|`"a rx ry a lf sf x y"` or<br>`a(rx,ry,a,lf,sf,x,y)` or <br>`a([rx,ry,a,lf,sf,x,y,...])`|Drawn an ellipse segment to x,y with radii rx and ry with the ellipse rotated to angle a. lf and sf flags select from 4 possible solutions. lf short way (0) or long way(1) and sf: cw (0) or ccw (1)|
+***
+## Extra path commands:
+These are extra commands introduced by Pathbuilder. The command set is not settled yet. In fact, only fillet and chamfer are likely to remain as they are. angle, polar and forward could be rolled into a single command.
+|Command|Code|Description|
+|-------|----|-------|
 |angle|`"angle a"` or `angle(a)`|Changes the currentexit angle from the last command.|
 |forward|`"forward d ..."` or<br>`forward(d)` or<br>`forward([x1,y1,x2,y2...]`|Extends a point in the direction of the current exit angle. This point can be at distance d or until a polyline is intersected formed by x,y value pairs.|
 |polar|`"polar d a"` or `polar(d,a)`|Draws a line to a point d distance away and angle a.|
