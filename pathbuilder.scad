@@ -27,12 +27,12 @@
 $pb_spline = 10;
 
 
-//  function svgPath(s)
+//  function svgPoints(s)
 //
 //  Processes a SVG path string and returns a 2D point list. This allows user point manipulation before the points are used.
 //  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
 //  return  (list) List of 2D points that outline the intended SVG path. Can be directly consumend by the polygon command.
-function svgPath(s) = pb_postProcessPath(pb_processCommands(pb_tokenizeSvgPath(s)));
+function svgPoints(s) = pb_postProcessPath(pb_processCommands(pb_tokenizeSvgPath(s)));
 
 //  module svgShape(s)
 //
@@ -40,7 +40,7 @@ function svgPath(s) = pb_postProcessPath(pb_processCommands(pb_tokenizeSvgPath(s
 //  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
 //  return  (polygon) polygon can be further handled by any openSCAD command.
 module svgShape(path=""){
-    polygon(svgPath(path));
+    polygon(svgPoints(path));
 }
 
 //  Helper functions:

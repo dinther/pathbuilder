@@ -23,7 +23,7 @@ if (show_demo==1){
 //  (2) Points first
 if (show_demo==2){
     $pb_spline=36;                                  //  We want 36 line segments on each spline.
-    pts = svgPath(pb_petal);                        //  Generate points list for the svg path.
+    pts = svgPoints(pb_petal);                        //  Generate points list for the svg path.
     //Do your thing to the points here
     for(a=[0:120:360]) rotate([0,15,a]) polygon(pts);
 }
@@ -31,7 +31,7 @@ if (show_demo==2){
 //  (3) Step by step
 //  Demonstrates how a path string is first tokenized then processed and finally post processed.
 //  Intermediate values can be examined with echo.
-//  Normally you would just use svgPath or svgShape to get an immediate result.
+//  Normally you would just use svgPoints or svgShape to get an immediate result.
 //  In this case the resulting pts list is re-used which is more efficient.
 if (show_demo==3){
     cmds = pb_tokenizeSvgPath(pb_swoosh);
@@ -50,9 +50,9 @@ if (show_demo==3){
 //  Forward command can be used to ray cast a line at a given angle to a list of points representing boundary line segments
 if (show_demo==4){
     boundary = "0 0 0 10 5 10 20 20 30 10";
-    linear_extrude(0.1) polyline(svgPath(str("M0 0L",boundary)));  //  Show the boundary
+    linear_extrude(0.1) polyline(svgPoints(str("M0 0L",boundary)));  //  Show the boundary
     for (i=[-80:10:80]){
-        pts = svgPath(str("m2 0h7angle",(i),"Forward",boundary));
+        pts = svgPoints(str("m2 0h7angle",(i),"Forward",boundary));
             //Do your thing to the points here
         if (len(pts)>2) color(rands(0,1,3),0.3) linear_extrude(0.081+i/1000) polygon(pts);
     }
@@ -67,10 +67,11 @@ if (show_demo==5){
     m(0,0,0) chamfer(4) h(5) fillet(1) v(10) segment(10,10,10) h(10) fillet(1) v(-5) fillet(1) l(25,7.5) fillet(1) l(-25,7.5) fillet(1) v(-5) fillet(1) h(-10) Segment(0,10,-15);
 }
 
+col = [[0.109, 0.277, 0.715],[0.996, 0.449, 0.707],[0.832, 0.113, 0.102],[0.953, 0.363, 0.137],[0.980, 0.789, 0.066]];
 //  Code with params
 //  Here parameters and the loop variable are used directly in pathbuilder commands resulting in multiple arrows branching out.
 if (show_demo==6){
-    for (arrow_length=[10:20:90]) color(rands(0,1,3)) translate([20, 20, 0]) linear_extrude(10-arrow_length/10) m(0,0,0,$fn=128) chamfer(10) h(20) fillet(2) v(arrow_length) segment(arrow_length, arrow_length, arrow_length) h(arrow_length) fillet(2) v(-10) fillet(2) l(35,20) fillet(2) l(-35, 20) fillet(2) v(-10) h(-arrow_length) Segment(0,arrow_length,-(arrow_length+20), $fn=48);
+    for (al=[10:20:90]) color(col[(al-10)/20]) translate([20, 20, 0]) linear_extrude(10-al/10) m(0,0,0,$fn=128) chamfer(10) h(20) fillet(2) v(al) segment(al, al, al) h(al) fillet(2) v(-10) fillet(2) l(35,20) fillet(2) l(-35, 20) fillet(2) v(-10) h(-al) Segment(0,al,-(al+20), $fn=48);
 } 
 /*
 M(68.56,-4,0,$pb_spline=4)
