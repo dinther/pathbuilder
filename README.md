@@ -1,115 +1,76 @@
-# pathbuilder
-Path builder library for use in openSCAD. It is designed to create 2D shapes that can then be extruded. Some shapes can be pretty hard to create in openSCAD using boolean operations while similar shapes are so easy in sgv.
-This library brings the <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d#path_commands">SVG path syntax</a> to openSCAD plus a some powerful additional commands such as fillet and chamfer.
+# Introduction
+![Image of right_arrow](images/ParametricSVG.png)
+Pathbuilder is a tool for openSCAD that make the creation of complex 2D shapes easier with a syntax similar to the one used for svg path. Pathbuilder supports [the complete svg command set](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d#path_commands) (except arc not complete yet)  and several extra commands to make the creation of 2d shapes as easy as possible.
 
-The SVG path commands in pathbuilder are all single character to keep with the original syntax. Just like with SVG lower case commands work with coordinates relative to the current point while upper-case commands work with absolute coordinates.
+You can place filets or Chamfers at any point. Extend lines up to an arbitrary boundary and much more.
 
-In this new version there are two ways pathbuilder can be used. 
-
-## install
-copy pathbuilder.scad to your openSCAD library folder
-put 
+# Installation
+Pathbuilder is contained in a single .scad file and in has no dependencies on other libraries. Just copy pathbuilder.scad to your openSCAD library folder and put 
 ```
 use <pathbuilder.scad>
 ```
-at the top of your code unit and you are ready to go.
+at the top of your code unit and you are ready to go. Copy this code into a new blank openSCAD file to make sure it all works.
 
-## example
-![Image of right_arrow](https://github.com/dinther/pathbuilder/blob/main/images/pathbuilder_right%20arrow.png)
-The code below produces this left arrow using chamfers, curves and fillets.
+# Quick test
 ```
-linear_extrude(3) s(0,0, 32) f(2) h(20) c(8) v(10) r(10, 10, 10) h(10) f(2) v(-10) f(2) l(35,20) f(2) L(40,50) f(2) v(-10) h(-10) R(0,10,-30) draw();
+include <pathbuilder.scad>
+
+svgShape("m 0 0chamfer8h20fillet2v20fillet10h20v-10fillet2l35 20fillet2l-35 20fillet2v-10h-40fillet30z");
 ```
-## rip and pillage
-If a path builder like this isn't quite your thing but you do want a routine to calculate a chamfer or fillet for your own project. Go and rip it out.
-Useful routines:
+You should see this.
+![Image of right_arrow](images/pathbuilder_right%20arrow.png)
+
+# flexible
+
+There are two ways to use pathbuilder. You can use a normal svg path string in Pathbuilder. This means that you can also draw your shapes in vector drawing programs such as inkscape and copy the path string into Pathbuilder.
+
+However the power of openSCAD is of course in its parametric capabilities. Although you could string together an svg path string with some variables, it isn't exactly elegant.
+
+Therefore pathbuilder also offers access to every command directly in your code. Commands are simply chained just like you are used to with openSCAD. A polygon is drawn at the end of the command sequence. This way you can pass in your parameters directly into pathbuilder command modules.
+
+Each method has its own benefits and drawbacks. The SVG path string method can create a polygon or return a point list which you can manipulate as desired. But modules also allow a much finer control over the curve segmentation as you can slip in a $fa, $fs or $fn parameter with every command module.
+
+## Rip and pillage
+If Pathbuilder isn't quite your thing you might still was to have a look at some of the functions. Pathbuilder has no dependencies and the functions have been written as self contained as possible and sensible.
+
+Here are just a few examples:
 
 ```
-function curveBetweenPoints(pt1, pt2, radius, incl_start_pt = true, $fn=$fn)
+function curveBetweenPoints(pt1, pt2, radius, incl_start_pt = true)
 ```
-Returns a list of points representing the shortest curve between two points with a given radius. There are always two solutions. Make the radius negative to get the other one.
-Set incl_start_pt to false if you don't want the start point in the output list. This avoids doubling up on point coordinates when you build a sequence of curves. This routine will try to stay close to your $fn and $fa settings but it always divides the arc in equal parts.
+Returns a list of points representing the shortest curve between two points with a given radius.
+
 ```
-function fillet(pts, index, radius, $fn=$fn)
+function fillet(pts, index, radius)
 ```
 Returns a list of points representing an arc with a given radius that is the tangent to pt1 and pt2 also known as a fillet.
-Set the radius to negative if you want the arc to bulge outward.
 ```
 function chamfer(pts, index, size)
 ```
-Returns a list of two points for a balanced symetrical chamfer of size for the given point in point list pts defined by index.
+Returns two points for a nice balanced symetrical chamfer of size for a given point in the point list.
 
 ## Commands
-Commands currently implemented are:
-```
-s(x,y,$fn) - start
-initialises the pathbuilder at your first [x,y] point
-s(10,0,$fn)
-```
-```
-d(d) - distance
-Adds a point at distance d relative from the last point in the last direction.
-This command assumes the direction angle is zero when less then two points are defined
-d(100)
-```
-```
-l(x,y) - line
-Adds a point x,y relative from the last point
-l(13,7)
-```
-```
-L(x,y) - line
-Adds a point with the given absolute coordinates x,y
-L(13,7)
-```
-```
-h(x) - horizontal
-Adds a point relative from the last point along the horizontal x axis
-h(5)
-```
-```
-H(x) - Horizontal
-Adds a point along the horizontal x axis at an absolute x coordinate.
-H(8)
-```
-```
-v(y) - vertical
-Adds a point relative from the last point along the vertical y axis
-v(6)
-```
-```
-V(y) - Vertical
-Adds a point along the vertical x axis at an absolute y coordinate.
-V(28)
-```
-```
-r(x,y,r) - round
-Adds multiple points to form a circle segment from the last point to relative point x,y with given radius
-An error is shown if the radius is less than half the distance between the two points.
-You can flip the circle segment inside out by changing the radius to negative
-r(x,y,r)
-```
-```
-R(x,y,r) - Round
-Adds multiple points to form a circle segment from the last point to absolute point x,y with given radius
-An error is shown if the radius is less than half the distance between the two points.
-You can flip the circle segment inside out by changing the radius to negative
-R(x,y,r)
-```
-```
-f(r, flip=false, $fn=$fn) - fillet
-Creates a fillet at the current point with the given radius. set Flip=true to turn the fillet outwards.
-The actual fillet is generated during the final draw command as both the incoming and outgoing line vector needs to be defined.
-You can override the $fn value at this point.
-V(28)
-```
-```
-c(s) - chamfer
-Inserts a balanced symetrical chamfer with size s on this point.
-V(28)
-```
-```
-draw() - draw
-The final draw command executes the post processing step for the fillets and chamfers, builds the final point list
-and generates a shape using the polygon command.
-```
+Here is a quick overview of the commands implemented so far. Check out the detailed [command documentation in the wiki](https://github.com/dinther/pathbuilder/wiki)
+
+Every path command in Pathbuilder has an uppercase and a lowercase version. This is important as the case defines if the command works in absolute coordinates or relative from the current point. More about this in the wiki. In this overview I ignore the case.
+
+SVG Commands currently implemented are:
+
+|Command|Code|Description|
+|-------|----|-------|
+|move to|`"m x y"` or `m(x,y)` or<br>`m([x,y,...])`|Required first command to set start point.|
+|line to|`"l x y"` or `l(x,y)` or<br>`l([x,y,...])`|Adds a point to the point path.|
+|horiz  |`"h x"` or `h(x)` or `h([x,...])`|horizontal line to x.|
+|vert   |`"v y"` or `v(y)` or `v([y,...])`|vertical line to y.|
+|cubic spline|`"c cx1 cy1 cx2 cy2 x2 y2"` or<br>`c(cx1,cy1,cx2,cy2,x2,y2)` or<br>`c([cx1,cy1,cx2,cy2,x2,y2,...])`|Draws a cubic spline to x2,y2 where cx1,cy1 controls the entry angle/shape and cx2,cy2 controls the exit angle/shape.|
+|smooth cubic spline|`"s cx cy x y"` or<br>`c(cx,cy,x,y)` or<br>`c([cx,cy,x,y,...])`|Draws a cubic spline continuation to x,y where cx,cy controls the exit angle/shape. The entry control point comes from a prior cubic spline if there was one otherwise the entry angle/shape initially starts like a line to x,y.|
+|quadratic spline|`"q cx, cy, x, y"` or<br>`q(cx,cy,x,y)` or<br>`q([cx,cy,x,y,...])`|Draws a quadratic spline to x,y. Control point cx,cy is shared between the current point and x,y.|
+|smooth quadratic spline|`"t x y"` or `t(x,y)` or `t([x,y,...]`|Draws a quadratic spline continuation to x,y using the control point from the previous quadratic spline. This sequence must start with a regular quadratic spline otherwise you get straight lines.|
+|arc<br>(not ready)|`"a rx ry a lf sf x y"` or<br>`a(rx,ry,a,lf,sf,x,y)` or <br>`a([rx,ry,a,lf,sf,x,y,...])`|Drawn an ellipse segment to x,y with radii rx and ry with the ellipse rotated to angle a. lf and sf flags select from 4 possible solutions. lf short way (0) or long way(1) and sf: cw (0) or ccw (1)|
+|angle|`"angle a"` or `angle(a)`|Changes the currentexit angle from the last command.|
+|forward|`"forward d ..."` or<br>`forward(d)` or<br>`forward([x1,y1,x2,y2...]`|Extends a point in the direction of the current exit angle. This point can be at distance d or until a polyline is intersected formed by x,y value pairs.|
+|polar|`"polar d a"` or `polar(d,a)`|Draws a line to a point d distance away and angle a.|
+|segment|`"segment x y r"` or `segment(x,y,r)` or `segment([x1,y1,x2,y2...],r)`|Draws the shortest circle segment between current point and x,y with radius r. Make r negative to change the curve from CW to CCW or vice versa. **depricated**|
+|fillet|`"fillet r"` or `fillet(r)`| Replaces the current point with a circle segment of radius r. The curve is placed tangential to the entry and exit lines which must be long enough to accomodate the fillet curve. Flip the curve by making r negative.|
+|chamfer|`"chamfer s"` or `chamfer(s)`|Replaces the current point with a symetrical chamfer of size s. The entry and exit lines must be long enough to accomodate the chamfer|
+
