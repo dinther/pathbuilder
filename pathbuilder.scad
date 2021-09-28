@@ -253,8 +253,8 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]]) =
         a = _r[2],
         ctl = _r[3],
         l = pb_last(_r[0]),
-        d = c=="m"? _pb_line([], true,cmd[1],0) :
-            c=="M"? _pb_line([], false, cmd[1],0) :
+        d = c=="m"? _pb_line(_r[0], true,cmd[1],0) :
+            c=="M"? _pb_line(_r[0], false, cmd[1],0) :
             c=="l"? _pb_line(_r[0], true, cmd[1], a) :
             c=="L"? _pb_line(_r[0], false, cmd[1], a) :
             c=="h"? _pb_horz(l, cmd[1], true, a) :
@@ -346,6 +346,62 @@ function pb_chamfer(pts, index, size) = let(
     f = b + bf,
     g = b + bg
 ) [f, g];
+
+//  function pb_ellipseCenter(p1, p2, rx, ry, angle, long, ccw)
+//
+//  Calculates center of a ellipse rx, ry rotated to angle that runs through both p1 and p2.
+//  p1          2D start point for the arc segment.
+//  p2          2D end point of the arc segment.
+//  rx          x radius for the ellipse when angle = 0
+//  ry          y radius for the ellipse when angle = 0
+//  angle       rotation angle of the ellipse around it's center point.
+//  long        Two ways around the ellipse. Set to true to take the long way.
+//  ccw         Set to true of you want the acr drawn following the ellipse counter clock wize.
+//
+//  return      List with two values.
+//      return[0]   2D point list forming a polyline representing the ellipseArc.
+//      return[1]   2D point which represents the position of the ellipse center point.
+function pb_ellipseCenter(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false)= let(
+P = [[cos(-angle), sin(-angle)], [-sin(-angle), cos(-angle)]] * ((p1-p2)*0.5),
+x = P[0], y = P[1], a =  ((x * x) / (rx * rx) ) + ( (y * y) / (ry * ry) ),
+rx = a > 1? (sqrt(a) * abs(rx)) : abs(rx), ry = a > 1? (sqrt(a) * abs(ry)) : abs(ry),
+co = (long == ccw? 1 : -1) * sqrt(( (rx*rx*ry*ry) - (rx*rx*y*y) - (ry*ry*x*x) ) / ( (rx*rx*y*y) + (ry*ry*x*x) )),
+C = ([[ cos(-angle), -sin(-angle)],[sin(-angle), cos(-angle)]] * [rx*y/ry, -ry*x/rx] * co) + ((p1+p2)*0.5)) C;
+
+//  function pb_ellipseArc(p1, p2, rx, ry, angle, long, ccw)
+//
+//  Produces a list of 2D points that approximates the arc segment required to from p1 to p2.
+//  p1          2D start point for the arc segment.
+//  p2          2D end point of the arc segment.
+//  rx          x radius for the ellipse when angle = 0
+//  ry          y radius for the ellipse when angle = 0
+//  angle       rotation angle of the ellipse around it's center point.
+//  long        Two ways around the ellipse. Set to true to take the long way.
+//  ccw         Set to true of you want the acr drawn following the ellipse counter clock wize.
+//
+//  return      List with two values.
+//      return[0]   2D point list forming a polyline representing the ellipseArc.
+//      return[1]   2D point which represents the position of the ellipse center point.
+function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false) = rx==0||ry==0? [p1,p2] : let(
+    d = norm(p2-p1),
+    e = assert(rx*2>=d, str("Radius:",rx," is too small for distance:",d)),
+   
+    pc = pb_ellipseCenter(p2,p1,rx,ry,angle, long, ccw),
+    
+    m = [[cos(angle), -sin(angle)],[sin(angle), cos(angle)]],
+    nm = [[cos(-angle), -sin(-angle)],[sin(-angle), cos(-angle)]],
+    v1 = (p1-pc) * nm, v2 = (p2-pc) * nm,
+    a1 = (v1[1]<0? 180 : 0)+ atan2(v1[0]/v1[1],rx/ry),
+    a2 = (v2[1]<0? 180 : 0)+ atan2(v2[0]/v2[1],rx/ry),
+    da = abs(a2 - a1 % 360), das = da<=180? da : 360-da,
+    cda = long? 360-das : das,
+    
+    s = pb_segmentsPerCircle((rx+ry)/2),
+    
+    steps = floor(abs(cda*s/360)), sa = ccw? -(cda/steps) : cda/steps,
+    angles = [for(i=[1:steps-1]) (a1 + (sa * i))%360],
+    pts = steps<=2? [p1,p2] : [p1,for(a=angles) pc+[sin(a) * rx , cos(a) * ry] * m, p2]
+) [pts,concat(pc,0)];
 
 //  function pb_curveBetweenPoints(p1, p2, radius)
 //
@@ -608,7 +664,7 @@ function _pb_smooth_cubic(last=[], args=[], rel=false, angle, ctrl_pts, _i=0, _g
     c1 = rel? last + [b[0],b[1]] : [b[0],b[1]],
     p1 = rel? last + [b[2],b[3]] : [b[2],b[3]],
     cn = pb_reflectPntOn(c1,p1),
-    _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[[],cn]] : _pb_cubic(p1, args, rel, angle, [[],cn], _i+1, _g, _r);
+    _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1))) _i==len(_g)-1? [_r,[], pb_calcExitAngle(_r),[[],cn]] : _pb_smooth_cubic(p1, args, rel, angle, [[],cn], _i+1, _g, _r);
 
 module s(cx2, cy2, x, y, n=20){
     args = is_num(x)? [cx2, cy2, x, y] : x;
@@ -701,18 +757,18 @@ module T(x, y, n=20){
 //  
 function _pb_arc(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
     _g = _g==undef? pb_groupsOf(7, args)[1] : _g,
-    b = _g(_i),
+    b = _g[_i],
     rx = b[0],
     ry = b[1],
     angle = b[2],
-    large_arc = b[3],
-    sweep = b[4],
+    long = b[3],
+    ccw = b[4],
     p2 = rel? last + [b[5], b[6]] : [b[5], b[6]],
-    d = pb_curveBetweenPoints(last, p2, rx),
-    _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], d[1]] : _pb_arc(p1, args, rel, angle, _i+1, _r);
+    d = pb_ellipseArc(last, p2, rx, ry, angle, long, ccw),
+    _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], d[1]] : _pb_arc(last, args, rel, angle, _i+1, _g, _r);
 
-module a(rx, ry, angle, large_arc, sweep, x, y){
-    args = is_num(x)? [rx, ry, angle, large_arc, sweep, x, y] : x;
+module a(rx, ry, angle, long, ccw, x, y){
+    args = is_num(x)? [rx, ry, angle, long, sweep, x, y] : x;
     data = _pb_arc(pb_last($pb_pts), args, true, $pb_angle, $pb_ctrl_pts);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
@@ -721,8 +777,8 @@ module a(rx, ry, angle, large_arc, sweep, x, y){
     children();    
 }
 
-module A(rx, ry, angle, large_arc, sweep, x, y){
-    args = is_num(x)? [rx, ry, angle, large_arc, sweep, x, y] : x;
+module A(rx, ry, angle, long, ccw, x, y){
+    args = is_num(x)? [rx, ry, angle, long, sweep, x, y] : x;
     data = _pb_arc(pb_last($pb_pts), args, false, $pb_angle, $pb_ctrl_pts);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
