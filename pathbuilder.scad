@@ -368,6 +368,7 @@ rx = a > 1? (sqrt(a) * abs(rx)) : abs(rx), ry = a > 1? (sqrt(a) * abs(ry)) : abs
 co = (long == ccw? 1 : -1) * sqrt(( (rx*rx*ry*ry) - (rx*rx*y*y) - (ry*ry*x*x) ) / ( (rx*rx*y*y) + (ry*ry*x*x) )),
 C = ([[ cos(-angle), -sin(-angle)],[sin(-angle), cos(-angle)]] * [rx*y/ry, -ry*x/rx] * co) + ((p1+p2)*0.5)) C;
 
+
 //  function pb_ellipseArc(p1, p2, rx, ry, angle, long, ccw)
 //
 //  Produces a list of 2D points that approximates the arc segment required to from p1 to p2.
