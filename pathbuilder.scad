@@ -31,16 +31,32 @@ $pb_spline = 10;
 //
 //  Processes a SVG path string and returns a 2D point list. This allows user point manipulation before the points are used.
 //  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
-//  return  (list) List of 2D points that outline the intended SVG path. Can be directly consumend by the polygon command.
-function svgPoints(s) = pb_postProcessPath(pb_processCommands(pb_tokenizeSvgPath(s)));
+//  return  (list) List of lists of 2D points that each outline the intended SVG path. Can be directly consumend by the polygon command.
+function svgPoints(s) = pb_postProcessPathLists(pb_processCommands(pb_tokenizeSvgPath(s)));
 
 //  module svgShape(s)
 //
 //  Processes a SVG path string and returns a 2D polygon.
 //  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
 //  return  (polygon) polygon can be further handled by any openSCAD command.
-module svgShape(path=""){
-    polygon(svgPoints(path));
+module svgShape(path="", _i=-2, _p=undef, _first_CW=undef){
+    _p = _p==undef? svgPoints(path) : _p;
+    l = len(_p);
+    _first_CW = _i<-1? pb_is_CW(_p[0]) : _first_CW;
+    _i = _i==-2? l-1 : _i;
+    if (l>0){
+        if (l==1) polygon(_p[0]);
+        if (_i>=0){
+            CW2 = pb_is_CW(_p[_i]);
+            if (CW2 == _first_CW) union(){
+                polygon(_p[_i]);
+                svgShape(path, _i-1, _p, _first_CW);
+            } else difference(){
+                svgShape(path, _i-1, _p, _first_CW);
+                polygon(_p[_i]);
+            }
+        }
+    }
 }
 
 //  Helper functions:
@@ -56,6 +72,7 @@ function pb_angle(v1, v2) = let(a = atan2(v2[0] - v1[0], v2[1] - v1[1])) a;
 //  function pb_angle(p1,p2)
 //
 //  Calculates the angle of the last line segment in the points list pts.
+
 //  Returns 0 when the point list only has one value in it.
 //  pts     (list)   List of 2D points.
 //  angle   (number) Last known angle. Returned in case pts is empty
@@ -122,6 +139,13 @@ function pb_groupsOf(n, list=[], skip=0, drop=0, only_groups=true) = list==[]? l
     result = [skip<1? [] : [for(i=[0:skip-1]) list[i]],
     [for(j=[skip:n:l-drop-n]) [for(k=[0:n-1]) list[j+k]]],
     drop>0 || (remain>0&&!only_groups) ? [for(m=[l-remain-drop:l-1]) list[m]] : []] ) result;
+
+//  function pb_is_CW(pts)
+//
+//  Tests if pts forms a Clock Wise (CW) or Counter Clock Wize (CCW) winding
+//  pts     (list)  A list of 2D points assumed a closed polyline.
+//  return  (bool)  true if pts is a wound Clock Wize otherwise false.
+function pb_is_CW(pts=[], _i=0, _r=0) = _i==len(pts)? _r>0 : pb_is_CW(pts, _i+1, _r + cross(_i==len(pts)-1? pts[0] : pts[_i+1], pts[_i]));
 
 //  function pb_is_2d(p)
 //
@@ -226,11 +250,23 @@ function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) =
         t1==0&&t2==4&&_d>1? 11 :    //  num to next dot
         0,                          //  not important
         dc = c==6 || c==7 || c==8 || c==9? 0 : _d,
-        w = t1!=3? str(_w,c1) : _w,
+        w = t1!=3&&(c1!="z" && c1!="Z")? str(_w,c1) : _w,
+        //w = t1!=3? str(_w,c1) : _w,
         _cmd = c>0||t2==5? t1==2? [w,[]] : [_cmd[0],concat(_cmd[1],[pb_parseNum(w)])] : _cmd,
         _cmds = (t1==0 || t1==3 || t2==5) && (t2==2|| t2==5)? concat(_cmds, [_cmd]) : _cmds,
         _w = c>0? "" : w
     ) pb_tokenizeSvgPath(s=s, _i=_i+1, _cmds=_cmds, _cmd=_cmd, _w=_w, _d=dc);
+
+//  function checks command list and splits command list to multiple command lists for every m or M command
+//  
+function pb_splitCommandLists(cmds=[], _i=0, _p=[], _r=[]) = _i==len(cmds)? _r  : let(
+    n = cmds[_i][0] =="m" || cmds[_i][0] =="M"? true : false,
+    _r = n && _p!=[]? concat(_r, [_p]) : _r,
+    _p = n? [cmds[_i]] : concat(_p,[cmds[_i]]),
+    r = _i==len(cmds)-1? concat(_r, [_p]) : _r
+) pb_splitCommandLists(cmds, _i+1, _p, r);
+
+function pb_processCommandLists(cmds_list) = [for (cmds=cmds_list) pb_processCommands(cmds)];
 
 //  function pb_processCommands(cmds)
 //
@@ -244,19 +280,20 @@ function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) =
 //      return[3]   (list)   List containing 2 bezier spline control points. However, only one can be set at a time and the other should be empty.
 //          return[3][0]    (list)  2D point representing the control point of the last command which must have been a quadratic spline type. Otherwise empty ([])
 //          return[3][1]    (list)  2D point representing the control point of the last command which must have been a cubic spline type. Otherwise empty ([])
-function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]]) = 
-        assert(is_list(cmds) && len(cmds) > 0 && (cmds[0][0] == "m" || cmds[0][0] == "M"), "cmds must be a list and start with a m (move) command")
-        _i==len(cmds)? [_r[0],concat(_r[1],[[4,len(_r[0])-1]])] : let(
+
+function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) = 
+        assert(is_list(cmds) && len(cmds) > 0 && (cmds[0][0] == "m" || cmds[0][0] == "M"), str("cmds must be a list and start with a m (move) command but started with ",cmds[0][0]))
+        _i==len(cmds)? concat(_f,[[_r[0],concat(_r[1],[[4,len(_r[0])-1]])]]) : let(
         cmd = cmds[_i],
         o = ord(cmd[0]),
         c = cmd[0],
         a = _r[2],
         ctl = _r[3],
         l = pb_last(_r[0]),
-        d = c=="m"? _pb_line(_r[0], true,cmd[1],0) :
-            c=="M"? _pb_line(_r[0], false, cmd[1],0) :
-            c=="l"? _pb_line(_r[0], true, cmd[1], a) :
-            c=="L"? _pb_line(_r[0], false, cmd[1], a) :
+        d = c=="m"? _pb_line(_r[0], true,cmd[1],a,true) :
+            c=="M"? _pb_line(_r[0], false, cmd[1],a,true) :
+            c=="l"? _pb_line(_r[0], true, cmd[1], a, false) :
+            c=="L"? _pb_line(_r[0], false, cmd[1], a, false) :
             c=="h"? _pb_horz(l, cmd[1], true, a) :
             c=="H"? _pb_horz(l, cmd[1], false, a) :
             c=="v"? _pb_vert(l, cmd[1], true, a) :
@@ -280,11 +317,13 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]]) =
             c=="segment"? _pb_segment(last=l, args=cmd[1], rel=true) :
             c=="Segment"? _pb_segment(last=l, args=cmd[1], rel=false) :
             c=="fillet"? _pb_fillet(_r[0], cmd[1], a) :
-            c=="chamfer"? _pb_chamfer(_r[0], cmd[1], a) : []
-    ) pb_processCommands(cmds, _i+1, d==[]? _r : [concat(_r[0], d[0]),concat(_r[1], d[1]), is_num(d[2])? d[2] : _r[2],is_list(d[3])? d[3]: [[],[]]]);
+            c=="chamfer"? _pb_chamfer(_r[0], cmd[1], a) : [],
+        _f = (c=="m" || c=="M") && _r[0]!=[]? concat(_f, [[_r[0],concat(_r[1],[[4,len(_r[0])-1]]),_r[2],_r[3]]]) : _f,
+        r = c=="m" || c=="M"? d : d==[]? _r : [concat(_r[0], d[0]),concat(_r[1], d[1]), is_num(d[2])? d[2] : _r[2],d[3]]
+    ) pb_processCommands(cmds, _i+1, c=="m" || c=="M"? d : d==[]? _r : [concat(_r[0], d[0]),concat(_r[1], d[1]), is_num(d[2])? d[2] : _r[2],is_list(d[3])? d[3]: [[],[]]], _f);
 
-    
-function pb_postProcessPath(data =[]) = let(
+function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
+    let(
         pts = data[0],
         steps = data[1],
         l = len(steps),
@@ -299,8 +338,7 @@ function pb_postProcessPath(data =[]) = let(
             chamf = step[0]==3? pb_chamfer(pts, step[1], data[1][i][2]) : [],
             post = start+1<=end-1?pb_subList(pts, start+1, end-1) : []
         ) for (p=concat(fill, chamf, post)) p]
-    ) concat(first_pt, result,last_pt);
-
+    ) concat(first_pt, result,last_pt)];
     
 //  Calculates tangent fillet for any given point in a closed points list. Flip the curve by setting the radius negative.    
 function pb_fillet(pts, index, radius) = let(
@@ -467,7 +505,7 @@ module m(x=0, y=0, a=0){
     $pb_fn = $fn;
     $pb_fa=$fa;
     $pb_fs=$fs;
-    data = _pb_line([],true, is_list(x)? x: [x,y],a);
+    data = _pb_line([],true, is_list(x)? x: [x,y],a,true);
     $pb_pts = data[0];
     $pb_post = data[1];
     $pb_angle = data[2];
@@ -485,7 +523,7 @@ module M(x=0, y=0, a=0){
     $pb_fn = $fn;
     $pb_fa=$fa;
     $pb_fs=$fs;
-    data = _pb_line([],false, is_list(x)? x : [x,y],a);
+    data = _pb_line([],false, is_list(x)? x : [x,y],a,true);
     $pb_pts = data[0];
     $pb_post = data[1];
     $pb_angle = data[2];
@@ -507,12 +545,12 @@ module M(x=0, y=0, a=0){
 //      return[0]  (list)    2D points list of the points generated by the command. The list is empty if not relevant.
 //      return[1]  (list)    List representing a post processing command. The list is empty if not relevant.
 //      return[2]  (number)  New current angle after the command completed. 
-function _pb_line(pts=[], rel=false, args=[], angle, _i=0, _g, _r=[]) = let(
+function _pb_line(pts=[], rel=false, args=[], angle, move=false, _i=0, _g, _r=[]) = let(
     _l = _r==[]? pts==[]? [0,0] : pb_last(pts) : pb_last(_r),
     _g = _g==undef? pb_groupsOf(2,args)[1] : _g,
     np = rel? _l+_g[_i] : _g[_i],
-    _r = np==_l&&pts!=[]? _r : concat(_r, [np])
-    ) _i>=len(_g)-1? [_r,pts==[]?[[0,0,0]]:[],pb_calcExitAngle(concat([_l],_r),angle)] : _pb_line(pts, rel, args, angle, _i+1, _g, _r);
+    _r = np==_l&&pts!=[]&&_r!=[]? _r : concat(_r, [np])
+    ) _i>=len(_g)-1? [_r,move?[[0,0,0]]:[],pb_calcExitAngle(concat([_l],_r),angle),[[],[]]] : _pb_line(pts, rel, args, angle, move, _i+1, _g, _r);
 
 //  module l
 //
@@ -522,10 +560,10 @@ function _pb_line(pts=[], rel=false, args=[], angle, _i=0, _g, _r=[]) = let(
 //  y       (number)  y value for the next point.
 module l(x, y){
     args = is_list(x)? x : [x,y];
-    data = _pb_line($pb_pts, true, args);
+    data = _pb_line($pb_pts, true, args, $pb_angle, false);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();    
 }
@@ -538,10 +576,10 @@ module l(x, y){
 //  y       (number)  y value for the next point.
 module L(x, y){
     args = is_list(x)? x : [x,y];
-    data = _pb_line($pb_pts, false, args);
+    data = _pb_line($pb_pts, false, args, $pb_angle, false);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();    
 }
@@ -558,7 +596,7 @@ module L(x, y){
 //      return[0]  (list)    2D points list of the points generated by the command. The list is empty if not relevant.
 //      return[1]  (list)    List representing a post processing command. The list is empty if not relevant.
 //      return[2]  (number)  New current angle after the command completed. 
-function _pb_horz(last=[], args=[], rel=false, angle) = let(x=rel? last[0] + args[0] : args[0]) x==last[0]? [[[]],[],angle] : [[[x, last[1]]], [], x > last[0]? 90 : 270];
+function _pb_horz(last=[], args=[], rel=false, angle) = let(x=rel? last[0] + args[0] : args[0]) x==last[0]? [[[]],[],angle,[[],[]]] : [[[x, last[1]]], [], x > last[0]? 90 : 270,[[],[]]];
 
 //  module h(last, rel, args)
 //
@@ -568,7 +606,7 @@ module h(x){
     data = _pb_horz(pb_last($pb_pts), [x], true, $pb_angle);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2]==undef? $pb_angle : data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();     
 }
@@ -581,7 +619,7 @@ module H(x){
     data = _pb_horz(pb_last($pb_pts), [x], false, $pb_angle);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();     
 }
@@ -598,14 +636,14 @@ module H(x){
 //      return[0]  (list)    2D points list of the points generated by the command. The list is empty if not relevant.
 //      return[1]  (list)    List representing a post processing command. The list is empty if not relevant.
 //      return[2]  (number)  New current angle after the command completed. 
-function _pb_vert(last=[], args=[], rel=false, angle) = let(y=rel? last[1] + args[0] : args[0]) y==last[1]? [[[]],[],angle] : [[[last[0],y]], [], y > last[0]? 0 : 180];
+function _pb_vert(last=[], args=[], rel=false, angle) = let(y=rel? last[1] + args[0] : args[0]) y==last[1]? [[[]],[],angle,[[],[]]] : [[[last[0],y]], [], y > last[0]? 0 : 180,[[],[]]];
 
 //  Adds point y units away from the last 
 module v(y){
     data = _pb_vert(pb_last($pb_pts), [y], true, $pb_angle);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
 }
@@ -615,7 +653,7 @@ module V(y){
     data = _pb_vert(pb_last($pb_pts), [y], false, $pb_angle);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();     
 }
@@ -766,14 +804,14 @@ function _pb_arc(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
     ccw = b[4],
     p2 = rel? last + [b[5], b[6]] : [b[5], b[6]],
     d = pb_ellipseArc(last, p2, rx, ry, angle, long, ccw),
-    _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], d[1]] : _pb_arc(last, args, rel, angle, _i+1, _g, _r);
+    _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], pb_calcExitAngle(d[0]),[[],[]]] : _pb_arc(last, args, rel, angle, _i+1, _g, _r);
 
 module a(rx, ry, angle, long, ccw, x, y){
     args = is_num(x)? [rx, ry, angle, long, sweep, x, y] : x;
     data = _pb_arc(pb_last($pb_pts), args, true, $pb_angle, $pb_ctrl_pts);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();    
 }
@@ -783,7 +821,7 @@ module A(rx, ry, angle, long, ccw, x, y){
     data = _pb_arc(pb_last($pb_pts), args, false, $pb_angle, $pb_ctrl_pts);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();    
 }
@@ -798,13 +836,13 @@ module A(rx, ry, angle, long, ccw, x, y){
 //  args[1]  (number)  Angle along which the new point is calculated.
 //  return (list)  Data structure being [new_points_list, new_post_processing_instructions_list, new_angle].
 function _pb_polar(pts=[], args=[]) = let(l= pb_last(pts))
-    [len(args)<2? [] : [l+[sin(args[1])*args[0], cos(args[1])*args[0]]],[],args[1]];
+    [len(args)<2? [] : [l+[sin(args[1])*args[0], cos(args[1])*args[0]]],[],args[1],[[],[]]];
 
 module polar(d, a){
     data = pb_polar($pb_pts, [d,$pb_angle+a]);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
 }
@@ -813,7 +851,7 @@ module Polar(d, a){
     data = pb_polar($pb_pts,[d,a]);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
 }
@@ -832,18 +870,20 @@ module Polar(d, a){
 function _pb_forward(last=[0,0], args=[], rel=false, angle) = let(
         l = len(args), p1 = last, d = l==1? args[0] : 0.001, p2 = p1+[sin(angle)*d, cos(angle)*d],
         bds = [for(b=l==1? [] : l==2? [[args[0]-1,args[1]],[args[0],args[1]],[args[0],args[1]+1]] : pb_groupsOf(2, args)[1]) rel? last+b : b],
-        pt = l==1? [[p2]] : l>1? pb_intersectLineWithPolyline([p1,p2],bds,true,true, false, l==2?undef:true) : [[[]]]) [len(pt)>0?[pt[0][0]]:[],[],angle];
+        pt = l==1? [[p2]] : l>1? pb_intersectLineWithPolyline([p1,p2],bds,true,true, false, l==2?undef:true) : [[[]]]) [len(pt)>0?[pt[0][0]]:[],[],angle,[[],[]]];
 
 module forward(d){
-    $pb_pts = concat($pb_pts, _pb_forward(pb_last($pb_pts), is_num(d)? [d] : d, true, $pb_angle)[0]);
-    $pb_ctrl_pts = [[],[]];
+    data = _pb_forward(pb_last($pb_pts), is_num(d)? [d] : d, true, $pb_angle);
+    concat($pb_pts, data[0]);
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
 }
 
 module Forward(d){
-    $pb_pts = concat($pb_pts, _pb_forward(pb_last($pb_pts), is_num(d)? [d] : d, false, $pb_angle)[0]);
-    $pb_ctrl_pts = [[],[]];
+    data = _pb_forward(pb_last($pb_pts), is_num(d)? [d] : d, false, $pb_angle);
+    $pb_pts = concat($pb_pts, data[0]);
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
 }
@@ -858,7 +898,7 @@ function _pb_segment(last=[], args=[], rel=false, _i=0, _r=[]) = let(
     pt2 = rel? last+groups[1][_i] : groups[1][_i],
     data = pb_curveBetweenPoints(last, pt2, r),
     _r = concat(_r, pb_subList(data[0], 1))
-    ) _i==len(groups[1])-1? [_r,[],data[1]] : pb_segment(last=pt2, args=args, rel, _i=_i+1, _r=_r);
+    ) _i==len(groups[1])-1? [_r,[],data[1],[[],[]]] : pb_segment(last=pt2, args=args, rel, _i=_i+1, _r=_r);
 
 module segment(x, y, r){
     l = pb_last($pb_pts);
@@ -866,7 +906,7 @@ module segment(x, y, r){
     data = _pb_segment(l, args, true);
     $pb_pts = concat($pb_pts,data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     $fn = $pb_fn; $fa = $pb_fa; $fs = $pb_fs;
     if ($children==0) pb_draw();
     children(); 
@@ -880,24 +920,26 @@ module Segment(x, y, r){
     data = _pb_segment(pb_last($pb_pts), args, false);
     $pb_pts = concat($pb_pts,data[0]);
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     $fn = $pb_fn; $fa = $pb_fa; $fs = $pb_fs;
     if ($children==0) pb_draw();
     children(); 
 }
 
-function _pb_angle(args, rel=false, angle) = [[],[], rel? angle + args[0] : args[0]];
+function _pb_angle(args, rel=false, angle) = [[],[], rel? angle + args[0] : args[0],[[],[]]];
 
 module angle(a){
-    $pb_angle = _pb_angle([a], true, $pb_angle)[2];
-    $pb_ctrl_pts = [[],[]];
+    data =_pb_angle([a], true, $pb_angle);
+    $pb_angle = data[2];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
 }
 
 module Angle(a){
-    $pb_angle = _pb_angle([a],false, $pb_angle)[2];
-    $pb_ctrl_pts = [[],[]];
+    data = _pb_angle([a],false, $pb_angle);
+    $pb_angle = data[2];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
 }
@@ -908,18 +950,18 @@ module fillet(r){
     data = _pb_fillet($pb_pts, [r, $fn], $pb_angle);
     $pb_post = concat($pb_post, data[1]);  //  fillet tag
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();  
 }
 
 //  Inserts a chamfer with size s on this point
-function _pb_chamfer(pts, args=[], angle) = [[],args[0]==0? [] : [[3,len(pts)-1, args[0]]],angle];
+function _pb_chamfer(pts, args=[], angle) = [[],args[0]==0? [] : [[3,len(pts)-1, args[0]]],angle,[[],[]]];
 module chamfer(s){
     data = _pb_chamfer($pb_pts, [s],$pb_angle);
     $pb_post = concat($pb_post, data[1]);  //  chamfer tag
     $pb_angle = data[2];
-    $pb_ctrl_pts = [[],[]];
+    $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children(); 
 }
