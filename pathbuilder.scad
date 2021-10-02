@@ -434,12 +434,13 @@ function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false) = r
     a2 = (v2[1]<0? 180 : 0)+ atan2(v2[0]/v2[1],rx/ry),
     da = abs(a2 - a1 % 360), das = da<=180? da : 360-da,
     cda = long? 360-das : das,
-    
+  
     s = pb_segmentsPerCircle((rx+ry)/2),
-    
-    steps = floor(abs(cda*s/360)), sa = ccw? -(cda/steps) : cda/steps,
-    angles = [for(i=[1:steps-1]) (a1 + (sa * i))%360],
-    pts = steps<=2? [p1,p2] : [p1,for(a=angles) pc+[sin(a) * rx , cos(a) * ry] * m, p2]
+
+    steps = floor(abs(cda*s/360)),
+    sa = ccw? -(cda/steps) : cda/steps,
+    e1=echo(cda=cda,s=s,sa=sa,steps=steps),
+    pts = steps<=2? [p1,p2] : [p1,for(i=[1:steps-1]) let(a = a1 + (sa * i)%360) pc+[sin(a) * rx , cos(a) * ry] * m, p2]
 ) [pts,concat(pc,0)];
 
 //  function pb_curveBetweenPoints(p1, p2, radius)
@@ -825,6 +826,9 @@ module A(rx, ry, angle, long, ccw, x, y){
     if ($children==0) pb_draw();
     children();    
 }
+
+//svgShape("M 103.74023 494.16992 A 4.7244094 4.7244094 0 0 0 102.55664 494.32812");
+//svgShape("M 0 0 A 4.7 4.7 0 0 0 2 0.2");
 
 //  function _pb_polar(pts, args) 
 //
