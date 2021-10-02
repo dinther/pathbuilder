@@ -439,7 +439,6 @@ function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false) = r
 
     steps = floor(abs(cda*s/360)),
     sa = ccw? -(cda/steps) : cda/steps,
-    e1=echo(cda=cda,s=s,sa=sa,steps=steps),
     pts = steps<=2? [p1,p2] : [p1,for(i=[1:steps-1]) let(a = a1 + (sa * i)%360) pc+[sin(a) * rx , cos(a) * ry] * m, p2]
 ) [pts,concat(pc,0)];
 
