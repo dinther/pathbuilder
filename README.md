@@ -33,7 +33,7 @@ Therefore pathbuilder also offers access to every command directly in your code.
 Each method has its own benefits and drawbacks. The SVG path string method can create a polygon or return a point list which you can manipulate as desired. But modules also allow a much finer control over the curve segmentation as you can slip in a $fa, $fs or $fn parameter with every command module.
 
 # Rip and pillage
-If Pathbuilder isn't quite your thing you might still was to have a look at some of the functions. Pathbuilder has no dependencies and the functions have been written as self contained as possible and sensible.
+If Pathbuilder isn't quite your thing you might still was to have a look at some of the functions. Pathbuilder has no dependencies and the functions have been written as self contained as possible and sensible. Even easier is to jump over to my other repository of stand-alone ready to use openSCAD functions called [openSCAD_functions](https://github.com/dinther/openSCAD_functions)
 
 Here are just a few examples:
 
