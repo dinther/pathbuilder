@@ -30,6 +30,12 @@ However the power of openSCAD is of course in its parametric capabilities. Altho
 
 Therefore pathbuilder also offers access to every command directly in your code. Commands are simply chained just like you are used to with openSCAD. A polygon is drawn at the end of the command sequence. This way you can pass in your parameters directly into pathbuilder command modules.
 
+## S bracket example
+
+![image](https://user-images.githubusercontent.com/1192916/153122019-61eb8e5a-9a15-42e6-a4ba-5fbb8efa8b66.png)
+
+### code
+
 ```
 use <pathbuilder.scad>
 
