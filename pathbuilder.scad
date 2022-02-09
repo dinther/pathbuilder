@@ -324,6 +324,7 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) =
 
 function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
     let(
+        //e = echo("pb_postProcessPathLists", data),
         pts = data[0],
         steps = data[1],
         l = len(steps),
@@ -826,9 +827,6 @@ module A(rx, ry, angle, long, ccw, x, y){
     children();    
 }
 
-//svgShape("M 103.74023 494.16992 A 4.7244094 4.7244094 0 0 0 102.55664 494.32812");
-//svgShape("M 0 0 A 4.7 4.7 0 0 0 2 0.2");
-
 //  function _pb_polar(pts, args) 
 //
 //  Adds a point at distance d relative from the last point in the given direction
@@ -842,7 +840,7 @@ function _pb_polar(pts=[], args=[]) = let(l= pb_last(pts))
     [len(args)<2? [] : [l+[sin(args[1])*args[0], cos(args[1])*args[0]]],[],args[1],[[],[]]];
 
 module polar(d, a){
-    data = pb_polar($pb_pts, [d,$pb_angle+a]);
+    data = _pb_polar($pb_pts, [d,$pb_angle+a]);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
@@ -851,7 +849,7 @@ module polar(d, a){
 }
 
 module Polar(d, a){
-    data = pb_polar($pb_pts,[d,a]);
+    data = _pb_polar($pb_pts,[d,a]);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
@@ -877,7 +875,7 @@ function _pb_forward(last=[0,0], args=[], rel=false, angle) = let(
 
 module forward(d){
     data = _pb_forward(pb_last($pb_pts), is_num(d)? [d] : d, true, $pb_angle);
-    concat($pb_pts, data[0]);
+    $pb_pts = concat($pb_pts, data[0]);
     $pb_ctrl_pts = data[3];
     if ($children==0) pb_draw();
     children();
@@ -971,5 +969,11 @@ module chamfer(s){
 
 //  Draws the final shape of $pb_pts as a polygon
 module pb_draw(){
-    polygon(pb_postProcessPath([$pb_pts, concat($pb_post, [[1,len($pb_pts)-1,0]])]));
+    //echo("draw");
+    //echo("$pb_pts",$pb_post);
+    data1 = [$pb_pts, concat($pb_post, [[4,len($pb_pts)-1]])];
+    //echo("data1", data1);
+    points1 = pb_postProcessPathLists([data1]);
+    //echo("points1", points1);
+    polygon(points1[0]);
 }
