@@ -1,4 +1,4 @@
-include <../pathbuilder.scad>
+include <pathbuilder.scad>
 
 //  This path command string will draw a magnifying glass.
 //  It is made of two paths.
