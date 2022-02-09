@@ -16,8 +16,8 @@ cmds = pb_tokenizeSvgPath(pb_yield);
 echo("************tokenized commands************");
 for (c=cmds) echo(c);
 
-//  process the commands into pointslist and post processing command list
-data = pb_processCommands(cmds);
+//  process the commands into pointslists and post processing command list
+data = pb_processCommands(cmds)[0];
 
 echo("************post processing commands************");
 for (p=data[1]){
