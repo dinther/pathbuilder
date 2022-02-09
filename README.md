@@ -31,24 +31,32 @@ However the power of openSCAD is of course in its parametric capabilities. Altho
 Therefore pathbuilder also offers access to every command directly in your code. Commands are simply chained just like you are used to with openSCAD. A polygon is drawn at the end of the command sequence. This way you can pass in your parameters directly into pathbuilder command modules.
 
 ```
-module davit(depth=100){
-    linear_extrude(depth){
-        $fn=64;           //  Set 64 segments for a circle
-        m(0,0)            //  move to coordinate x=0, y=0
-        fillet(100)       //  make a fillet radius 100 mm here
-        polar(1000, -30)  //  line 1000 mm angle -30 deg to previous line
-        polar(600, -30)   //  line 600 mm angle -30 deg to previous line
-        fillet(20)        //  make a fillet radius 20 deg here
-        polar(70, 90)     //  line 70 mm angle 90 deg to previous line
-        fillet(20)        //  make a fillet radius 20 deg here
-        polar(625, 85)    //  line 625 mm angle 85 deg to previous line
-        fillet(180)       //  make a fillet radius 180 deg here
-        polar(1030, 30)   //  line 1030 mm angle 30 deg to previous line
-        fillet(100);      // make a fillet radius 100 deg here
-    }
-}
+use <pathbuilder.scad>
 
-davit(70);
+//  S bracket
+
+width = 40;
+length = 60;
+height = 30;
+thickness = 5;
+inner_radius = 3;
+
+$fn = 64;
+linear_extrude(width){
+    m(0,0)
+    v(thickness)
+    h((length - thickness)/2)
+    fillet(inner_radius)
+    V(height)
+    fillet(inner_radius + thickness)
+    H(length)
+    v(-thickness)
+    h(-(length - thickness)/2)
+    fillet(inner_radius)
+    V(0)
+    fillet(inner_radius + thickness)
+    H(0);
+}
 ```
 Each method has its own benefits and drawbacks. The SVG path string method can create a polygon or return a point list which you can manipulate as desired. But modules also allow a much finer control over the curve segmentation as you can slip in a $fa, $fs or $fn parameter with every command module.
 
