@@ -31,7 +31,7 @@ $pb_spline = 10;
 //
 //  Processes a SVG path string and returns a 2D point list. This allows user point manipulation before the points are used.
 //  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
-//  return  (list) List of lists of 2D points that each outline the intended SVG path. Can be directly consumend by the polygon command.
+//  return  (list) List of lists of 2D points that each outline the SVG paths in the SVG path string. Can be directly consumend by the polygon command.
 function svgPoints(s) = pb_postProcessPathLists(pb_processCommands(pb_tokenizeSvgPath(s)));
 
 //  module svgShape(s)
