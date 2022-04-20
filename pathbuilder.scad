@@ -26,12 +26,11 @@
 //  This value controls how many line segments are created for all types of spline curves.
 $pb_spline = 10;
 
-
 //  function svgPoints(s)
 //
 //  Processes a SVG path string and returns a 2D point list. This allows user point manipulation before the points are used.
 //  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
-//  return  (list) List of lists of 2D points that each outline the SVG paths in the SVG path string. Can be directly consumend by the polygon command.
+//  return  (list) List of lists of 2D points that each outline the intended SVG path. Can be directly consumend by the polygon command.
 function svgPoints(s) = pb_postProcessPathLists(pb_processCommands(pb_tokenizeSvgPath(s)));
 
 //  module svgShape(s)
@@ -424,8 +423,7 @@ C = ([[ cos(-angle), -sin(-angle)],[sin(-angle), cos(-angle)]] * [rx*y/ry, -ry*x
 //      return[1]   2D point which represents the position of the ellipse center point.
 function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false) = rx==0||ry==0? [p1,p2] : let(
     d = norm(p2-p1),
-    e = assert(rx*2>=d, str("Radius:",rx," is too small for distance:",d)),
-   
+    e = assert(rx*2>=d, str("pb_ellipseArc - Radius:",rx," is too small for distance:",d)),
     pc = pb_ellipseCenter(p2,p1,rx,ry,angle, long, ccw),
     
     m = [[cos(angle), -sin(angle)],[sin(angle), cos(angle)]],
@@ -802,14 +800,24 @@ function _pb_arc(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
     ry = b[1],
     angle = b[2],
     long = b[3],
-    ccw = b[4],
+    sweep = b[4],
     p2 = rel? last + [b[5], b[6]] : [b[5], b[6]],
-    d = pb_ellipseArc(last, p2, rx, ry, angle, long, ccw),
+    d = pb_ellipseArc(last, p2, rx, ry, angle, long, sweep),
     _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], pb_calcExitAngle(d[0]),[[],[]]] : _pb_arc(last, args, rel, angle, _i+1, _g, _r);
 
-module a(rx, ry, angle, long, ccw, x, y){
+//  arc creates an ellipse according the x and y radius.
+//
+//  rx    (number)  Radius for the ellipse along the x axis.
+//  ry    (number)  Radius for the ellipse along the y axis.
+//  angle (number)  Degrees of rotation for the ellipse.
+//  long  (bool)    Ensures arc will be greater than 180 degrees when true.
+//  ccw   (bool)    Ensures arc will be drawn counter clockwize when true.
+//  x     (number)  x value of the desired 2D end point.
+//  y     (number)  y value of the desired 2D end point.
+
+module a(rx, ry, angle, long, sweep, x, y){
     args = is_num(x)? [rx, ry, angle, long, sweep, x, y] : x;
-    data = _pb_arc(pb_last($pb_pts), args, true, $pb_angle, $pb_ctrl_pts);
+    data = _pb_arc(pb_last($pb_pts), args, true, 0, 0, undef, []);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
@@ -817,9 +825,9 @@ module a(rx, ry, angle, long, ccw, x, y){
     children();    
 }
 
-module A(rx, ry, angle, long, ccw, x, y){
+module A(rx, ry, angle, long, sweep, x, y){
     args = is_num(x)? [rx, ry, angle, long, sweep, x, y] : x;
-    data = _pb_arc(pb_last($pb_pts), args, false, $pb_angle, $pb_ctrl_pts);
+    data = _pb_arc(pb_last($pb_pts), args, false, 0, 0, undef, []);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
@@ -969,11 +977,7 @@ module chamfer(s){
 
 //  Draws the final shape of $pb_pts as a polygon
 module pb_draw(){
-    //echo("draw");
-    //echo("$pb_pts",$pb_post);
     data1 = [$pb_pts, concat($pb_post, [[4,len($pb_pts)-1]])];
-    //echo("data1", data1);
     points1 = pb_postProcessPathLists([data1]);
-    //echo("points1", points1);
     polygon(points1[0]);
 }
