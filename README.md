@@ -28,7 +28,7 @@ There are two ways to use pathbuilder. You can use a normal svg path string in P
 
 However the power of openSCAD is of course in its parametric capabilities. Although you could string together a svg path string with some variables, it isn't exactly elegant.
 
-Ppathbuilder also offers access to every command directly in your code. Commands are simply chained just like you are used to with openSCAD. A polygon is drawn at the end of the command sequence. This way you can pass your parameters directly into pathbuilder commands.
+Pathbuilder also offers access to every command directly in your code. Commands are simply chained just like you are used to with openSCAD. A polygon is drawn at the end of the command sequence. This way you can pass your parameters directly into pathbuilder commands.
 
 ## S bracket example
 
