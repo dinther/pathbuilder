@@ -235,7 +235,7 @@ function _pb_intersect_sort(list, sort_idx=2) =
 
 //  function pb_parseNum(s)
 //
-//  Converts a string into a number. this can be an integer or a floating point variable.
+//  Converts a string into a number. This can be an integer or a floating point value. Supports scientific notiation.
 //  The function can not handle hex notation.
 //  s       (list)  String representing a number. Valid characters are +-0123456789e and .
 //  return  (number)  Can be either integer positive or negative or floating point value positive or negative
