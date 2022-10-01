@@ -121,12 +121,12 @@ function pb_last(pts) = let(l=is_list(pts)? len(pts) : 0) l==0? [0,0] : pts[l-1]
 //      pb_sublist([0,1,2,3,4,5,6],-1, 0)  => [6,5,4,3,2,1,0] //  Reverse list
 function pb_subList(list, start=0, end) = let(l = len(list), s = start<0? l+start: start, e = end==undef? l-1 : end<0? l+end: end, sp=e<s? -1 : 1) [for(i=[s:sp:e]) list[i]];
 
-//  function pb_trim(s)
+//  function pb_replacechar(s)
 //  string      (string)  Source string
 //  char        (char)    Character to be deleted from string
 //  Returns sub string of string.
-function pb_trim(string, char=" ", start=0) = start < len(string) ?
-str(string[start]==char? "" : string[start], pb_trim(string, char, start + 1)) : "";
+function pb_replacechar(string, findchar=" ", repchar="", _s=0) = _s < len(string) ?
+str(string[_s]==findchar? repchar : string[_s], pb_replacechar(string, findchar, repchar, _s + 1)) : "";
 
 //  function pb_substring(s)
 //  string      (string)  Source string
@@ -235,14 +235,14 @@ function _pb_intersect_sort(list, sort_idx=2) =
 
 //  function pb_parseNum(s)
 //
-//  Converts a string into a number. This can be an integer or a floating point value. Supports scientific notiation.
+//  Converts a string into a number. this can be an integer or a floating point variable.
 //  The function can not handle hex notation.
 //  s       (list)  String representing a number. Valid characters are +-0123456789e and .
 //  return  (number)  Can be either integer positive or negative or floating point value positive or negative
 function pb_parseNum(s, _i=0, _n=0, _d=0, _r1=0, _r2=0) = _i==len(s)? s[0]=="-"? -(_r1+_r2) : _r1+_r2 : let(
         o = ord(s[_i]), f = o==101? pb_parseNum(pb_substring(s, _i+1, len(s))) : 0, _n = o==45 || o==43? 1: _n,
         _d = o == 46? _i+1 : _d, c = (o>47 && o<58), _r1 = c&&_d==0? _r1*10+(o-48) : _r1, _r2 = c&&_d!=0? _r2+(o-48) * pow(10,-_i+_d-1) : _r2
-    ) pb_parseNum(pb_trim(s), f==0? _i+1 : len(s), _n, _d, _r1, _r2) * pow(10,f);
+    ) pb_parseNum(pb_replacechar(s), f==0? _i+1 : len(s), _n, _d, _r1, _r2) * pow(10,f);
 
 function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) = 
     _i>len(s)-1?  _cmds : let(
