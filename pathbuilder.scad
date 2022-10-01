@@ -671,7 +671,7 @@ function _pb_cubic(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
     _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[[],pb_reflectPntOn(c1, p1)]] : _pb_cubic(p1, args, rel, angle, _i+1, _g, _r);
 
 module c(cx1, cy1, cx2, cy2, x, y, n=20){
-    args = is_num(x)? [cx1, cy1, cx2, cy2, x, y] : x;
+    args = is_num(cx1)? [cx1, cy1, cx2, cy2, x, y] : cx1;
     data = _pb_cubic(pb_last($pb_pts), args, true, $pb_angle);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
@@ -681,7 +681,7 @@ module c(cx1, cy1, cx2, cy2, x, y, n=20){
 }
 
 module C(cx1, cy1, cx2, cy2, x, y, n=20){
-    args = is_num(x)? [cx1, cy1, cx2, cy2, x, y] : x;
+    args = is_num(cx1)? [cx1, cy1, cx2, cy2, x, y] : cx1;
     data = _pb_cubic(pb_last($pb_pts), args, false, $pb_angle);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
@@ -705,7 +705,7 @@ function _pb_smooth_cubic(last=[], args=[], rel=false, angle, ctrl_pts, _i=0, _g
     _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1))) _i==len(_g)-1? [_r,[], pb_calcExitAngle(_r),[[],cn]] : _pb_smooth_cubic(p1, args, rel, angle, [[],cn], _i+1, _g, _r);
 
 module s(cx2, cy2, x, y, n=20){
-    args = is_num(x)? [cx2, cy2, x, y] : x;
+    args = is_num(cx2)? [cx2, cy2, x, y] : cx2;
     data = _pb_smooth_cubic(pb_last($pb_pts), args, true, $pb_angle, $pb_ctrl_pts);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
@@ -715,7 +715,7 @@ module s(cx2, cy2, x, y, n=20){
 }
 
 module S(cx2, cy2, x, y, n=20){
-    args = is_num(x)? [cx2, cy2, x, y] : x;
+    args = is_num(cx2)? [cx2, cy2, x, y] : cx2;
     data = _pb_smooth_cubic(pb_last($pb_pts), args, false, $pb_angle, $pb_ctrl_pts);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
@@ -747,7 +747,7 @@ module q(cx, cy, x, y, n=$pb_spline){
 }
 
 module Q(cx, cy, x, y, n=$pb_spline){
-    args = is_num(x)? [cx, cy, x, y] : x;
+    args = is_num(cx)? [cx, cy, x, y] : cx;
     data = _pb_quadratic(pb_last($pb_pts), args, false, $pb_angle);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
@@ -816,7 +816,7 @@ function _pb_arc(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
 //  y     (number)  y value of the desired 2D end point.
 
 module a(rx, ry, angle, long, sweep, x, y){
-    args = is_num(x)? [rx, ry, angle, long, sweep, x, y] : x;
+    args = is_num(rx)? [rx, ry, angle, long, sweep, x, y] : rx;
     data = _pb_arc(pb_last($pb_pts), args, true, 0, 0, undef, []);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
@@ -826,7 +826,7 @@ module a(rx, ry, angle, long, sweep, x, y){
 }
 
 module A(rx, ry, angle, long, sweep, x, y){
-    args = is_num(x)? [rx, ry, angle, long, sweep, x, y] : x;
+    args = is_num(rx)? [rx, ry, angle, long, sweep, x, y] : rx;
     data = _pb_arc(pb_last($pb_pts), args, false, 0, 0, undef, []);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
