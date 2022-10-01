@@ -16,24 +16,26 @@ cmds = pb_tokenizeSvgPath(pb_yield);
 echo("************tokenized commands************");
 for (c=cmds) echo(c);
 
-//  process the commands into pointslists and post processing command list
-data = pb_processCommands(cmds)[0];
+//  process the commands into a list of shape data. Each shape consists of a point list and a list of post processing commands.
+shape_list = pb_processCommands(cmds);
+shape1 = shape_list[0];
 
 echo("************post processing commands************");
-for (p=data[1]){
+for (p=shape1[1]){
     echo(p,
         p[0]==0? str("start   index:", p[1]) :
-        p[0]==2? str("fillet  index:", p[1], "radius: ", p[2]) :
-        p[0]==3? str("chamfer index:", p[1], "size: ", p[2]) :
+        p[0]==2? str("fillet  index:", p[1], " radius:", p[2]) :
+        p[0]==3? str("chamfer index:", p[1], " size:", p[2]) :
         p[0]==4? str("end     index:", p[1]) : 
         str("error ",p[0]," unknown")
     );
 }
-//  this yellow shape is what we know before post processing.
-translate([0,0,-1]) color("yellow") linear_extrude(1) polygon(data[0]);
+//  This yellow shape is what we know before post processing.
+//  Fillets and chamfers are not yet applied.
+translate([0,0,-1]) color("yellow") linear_extrude(1) polygon(shape1[0]);
 
 //  apply the post processing steps
-pts = pb_postProcessPath(data);
+pts = pb_postProcessPathLists(shape_list)[0];
 
 //  The final result
-linear_extrude(1) polygon(pts);
+color("red") linear_extrude(1) polygon(pts);
