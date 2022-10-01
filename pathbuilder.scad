@@ -803,7 +803,7 @@ function _pb_arc(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
     sweep = b[4],
     p2 = rel? last + [b[5], b[6]] : [b[5], b[6]],
     d = pb_ellipseArc(last, p2, rx, ry, angle, long, sweep),
-    _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], pb_calcExitAngle(d[0]),[[],[]]] : _pb_arc(last, args, rel, angle, _i+1, _g, _r);
+    _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], pb_calcExitAngle(d[0]),[[],[]]] : _pb_arc(p2, args, rel, angle, _i+1, _g, _r);
 
 //  arc creates an ellipse according the x and y radius.
 //
