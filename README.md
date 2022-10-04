@@ -10,7 +10,7 @@ Pathbuilder is contained in a single .scad file and in has no dependencies on ot
 ```
 use <pathbuilder.scad>
 ```
-at the top of your code unit and you are ready to go. Copy this code into a new blank openSCAD file to make sure it all works. Dont forget to check out the [pathbuilderdemo.scad](pathbuilderdemo.scad) it contains 6 examples on how Pathbuilder can be used.
+at the top of your code unit and you are ready to go. Copy this code into a new blank openSCAD file to make sure it all works. Dont forget to check out the [demo folder](https://github.com/dinther/pathbuilder/tree/main/demo) it contains 6 examples on how Pathbuilder can be used.
 
 ### Quick test
 ```
