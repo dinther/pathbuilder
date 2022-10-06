@@ -326,7 +326,6 @@ function pb_processCommandLists(cmds_list) = [for (cmds=cmds_list) pb_processCom
 function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) = 
         assert(is_list(cmds) && len(cmds) > 0 && (cmds[0][0] == "m" || cmds[0][0] == "M"), str("cmds must be a list and start with a m (move) command but started with ",cmds[0][0]))
         _i==len(cmds)? concat(_f,[[_r[0],concat(_r[1],[[4,len(_r[0])-1]])]]) : let(
-e=echo("pb_processCommands",_r,cmds[_i]),
         cmd = cmds[_i],
         o = ord(cmd[0]),
         c = cmd[0],
@@ -872,7 +871,6 @@ module a(rx, ry, angle, long, sweep, x, y){
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
-    echo("a",$children,parent_module(0));
     if (pb_do_render($children, parent_module(0))) pb_draw();
     children();    
 }
@@ -1031,7 +1029,7 @@ module chamfer(s){
 module pb_draw(){
     data1 = [$pb_pts, concat($pb_post, [[4,len($pb_pts)-1]])];
     points1 = pb_postProcessPathLists([data1]);
-    echo("pb_draw",points1);
+//
     polygon(points1[0]);
     //if (pb_do_render($children, parent_module(0))) pb_draw();
     children();      
