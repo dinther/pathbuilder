@@ -121,6 +121,32 @@ function pb_last(pts) = let(l=is_list(pts)? len(pts) : 0) l==0? [0,0] : pts[l-1]
 //      pb_sublist([0,1,2,3,4,5,6],-1, 0)  => [6,5,4,3,2,1,0] //  Reverse list
 function pb_subList(list, start=0, end) = let(l = len(list), s = start<0? l+start: start, e = end==undef? l-1 : end<0? l+end: end, sp=e<s? -1 : 1) [for(i=[s:sp:e]) list[i]];
 
+
+//  string handling code from rColyer on Github
+//  https://github.com/thehans/funcutils/blob/master/string.scad
+
+function join(l,delimiter="") = let(s = len(l), d = delimiter,
+      jb = function (b,e) let(s = e-b, m = floor(b+s/2)) // join binary
+        s > 2 ? str(jb(b,m), jb(m,e)) : s == 2 ? str(l[b],l[b+1]) : l[b],
+      jd = function (b,e) let(s = e-b, m = floor(b+s/2))  // join delimiter
+        s > 2 ? str(jd(b,m), d, jd(m,e)) : s == 2 ? str(l[b],d,l[b+1]) : l[b])
+  s > 0 ? (d=="" ? jb(0,s) : jd(0,s)) : "";
+
+function substr(s,b,e) = let(e=is_undef(e) || e > len(s) ? len(s) : e) (b==e) ? "" : join([for(i=[b:1:e-1]) s[i] ]);
+
+function split(s,separator=" ") = separator=="" ? [for(i=[0:1:len(s)-1]) s[i]] :
+  let(t=separator, e=len(s), f=len(t),
+    _s=function(b,c,d,r) b<e ?
+      (s[b]==t[c] ?
+        (c+1 == f ?
+          _s(b+1,0,b+1,concat(r,substr(s,d,b-c))) : // full separator match, concat substr to result
+          _s(b+1,c+1,d,r) ) : // separator match char, more to test
+        _s(b-c+1,0,d,r) ) : // separator mismatch
+      concat(r,substr(s,d,e))) // end of input string, return result
+  _s(0,0,0,[]);
+
+function replace(s, oldText, newText) = join(split(s, oldText),newText);
+
 //  function pb_replacechar(s)
 //  string      (string)  Source string
 //  char        (char)    Character to be deleted from string
@@ -246,7 +272,8 @@ function pb_parseNum(s, _i=0, _n=0, _d=0, _r1=0, _r2=0) = _i==len(s)? s[0]=="-"?
 
 function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) = 
     _i>len(s)-1?  _cmds : let(
-        
+        //replace all "true" and "false" with 1 or 0
+        s = replace(replace(replace(replace(replace(replace(s,"FALSE", "0"),"False", "0"),"false", "0"),"TRUE", "1"),"True", "1"),"true", "1"),
         l=len(s), c1 = s[_i], a1 = ord(c1), a2 = ord(s[min(l-1,_i+1)]), _d = a2==46? _d+1 : _d,
         //   0=number            1=sign                3=sep                 4=dot       2=char
         t1 = a1>47 && a1<58? 0 : a1==43 || a1==45? 1 : a1==32 || a1==44? 3 : a1==46? 4 : 2,
@@ -299,7 +326,7 @@ function pb_processCommandLists(cmds_list) = [for (cmds=cmds_list) pb_processCom
 function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) = 
         assert(is_list(cmds) && len(cmds) > 0 && (cmds[0][0] == "m" || cmds[0][0] == "M"), str("cmds must be a list and start with a m (move) command but started with ",cmds[0][0]))
         _i==len(cmds)? concat(_f,[[_r[0],concat(_r[1],[[4,len(_r[0])-1]])]]) : let(
-//e=echo(_r,cmds[_i]),
+e=echo("pb_processCommands",_r,cmds[_i]),
         cmd = cmds[_i],
         o = ord(cmd[0]),
         c = cmd[0],
@@ -340,7 +367,6 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) =
 
 function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
     let(
-        //e = echo("pb_postProcessPathLists", data),
         pts = data[0],
         steps = data[1],
         l = len(steps),
@@ -438,7 +464,7 @@ C = ([[ cos(-angle), -sin(-angle)],[sin(-angle), cos(-angle)]] * [rx*y/ry, -ry*x
 //  return      List with two values.
 //      return[0]   2D point list forming a polyline representing the ellipseArc.
 //      return[1]   2D point which represents the position of the ellipse center point.
-function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false) = rx==0||ry==0? [p1,p2] : let(
+function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false, skip_first=false) = rx==0||ry==0? [p1,p2] : let(
     d = norm(p2-p1),
     e = assert(rx*2>=d, str("pb_ellipseArc - Radius:",rx," is too small for distance:",d)),
     pc = pb_ellipseCenter(p2,p1,rx,ry,angle, long, ccw),
@@ -455,8 +481,8 @@ function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false) = r
 
     steps = floor(abs(cda*s/360)),
     sa = ccw? -(cda/steps) : cda/steps,
-    pts = steps<=2? [p1,p2] : [p1,for(i=[1:steps-1]) let(a = a1 + (sa * i)%360) pc+[sin(a) * rx , cos(a) * ry] * m, p2]
-) [pts,concat(pc,0)];
+    pts = steps<=2? [p2] : [for(i=[1:steps-1]) let(a = a1 + (sa * i)%360) pc+[sin(a) * rx , cos(a) * ry] * m, p2]
+) [skip_first? pts : concat([p1],pts),concat(pc,0)];
 
 //  function pb_curveBetweenPoints(p1, p2, radius)
 //
@@ -497,9 +523,8 @@ function pb_curveBetweenPoints(p1=[], p2=[], radius=0) = radius==0? [p1,p2] : le
 //  c       (list)   List of two numbers representing a 2D control point shaping the curve and defines both entry and exit tangents.
 //  p1      (list)   List of two numbers representing the 2D end point of the curve.
 //  n       (number) The number of points that should be returned.
-//  sf      (bool)   Set to true if you don't want the start coordinate. This is useful when chaining lists of points.
 //  return  (list)   List of 2D points resembling the quadratic curve.
-function pb_bezier_quadratic_curve(p0, c, p1, n = $pb_spline, sf=false) = [for(t = [sf? 1: 0 : n]) let(t0=t/n, t1=pow(1 - t0, 2), t2=pow(t0, 2)) [p0[0] * t1 + 2 * c[0] * t0 * (1 - t0) + p1[0] * t2, p0[1] * t1 + 2 * c[1] * t0 * (1 - t0) + p1[1] * t2]];
+function pb_bezier_quadratic_curve(p0, c, p1, n = $pb_spline, skip_first=false) = [for(t = [skip_first? 1: 0 : n]) let(t0=t/n, t1=pow(1 - t0, 2), t2=pow(t0, 2)) [p0[0] * t1 + 2 * c[0] * t0 * (1 - t0) + p1[0] * t2, p0[1] * t1 + 2 * c[1] * t0 * (1 - t0) + p1[1] * t2]];
 
 //  function pb_bezier_cubic_curve(p0, c0, c1, p1, n)
 //
@@ -509,9 +534,8 @@ function pb_bezier_quadratic_curve(p0, c, p1, n = $pb_spline, sf=false) = [for(t
 //  c1      (list)   List of two numbers representing a 2D control point shaping the curve and defining the exit tangent.
 //  p1      (list)   List of two numbers representing the 2D end point of the curve.
 //  n       (number) The number of points that should be returned.
-//  sf      (bool)   Set to true if you don't want the start coordinate. This is useful when chaining lists of points.
 //  return  (list)   List of 2D points resembling the cubic curve.
-function pb_bezier_cubic_curve(p0, c0, c1, p1, n = $pb_spline, sf=false) = [for(t = [sf? 1: 0 : n]) let(t0=t/n, t1=pow((1 - t0), 3),t2=pow((1 - t0), 2),t3=pow(t0, 2) * (1 - t0), t4=pow(t0, 3)) [ p0[0] * t1 + 3 * c0[0] * t0 * t2 + 3 * c1[0] * t3 + p1[0] * t4, p0[1] * t1 + 3 * c0[1] * t0 * t2 + 3 * c1[1] * t3 + p1[1] * t4]];
+function pb_bezier_cubic_curve(p0, c0, c1, p1, n = $pb_spline, skip_first=false) = [for(t = [skip_first? 1: 0 : n]) let(t0=t/n, t1=pow((1 - t0), 3),t2=pow((1 - t0), 2),t3=pow(t0, 2) * (1 - t0), t4=pow(t0, 3)) [ p0[0] * t1 + 3 * c0[0] * t0 * t2 + 3 * c1[0] * t3 + p1[0] * t4, p0[1] * t1 + 3 * c0[1] * t0 * t2 + 3 * c1[1] * t3 + p1[1] * t4]];
 
 
 //function pb_do_render($children, parent_module_name) = ($children == 0 || parent_module_name == "M" || parent_module_name == "m");
@@ -695,7 +719,7 @@ function _pb_cubic(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
     c0 = rel? last + [b[0],b[1]] : [b[0],b[1]],
     c1 = rel? last + [b[2],b[3]] : [b[2],b[3]],
     p1 = rel? last + [b[4],b[5]] : [b[4],b[5]],
-    _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1, sf=true))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[[],pb_reflectPntOn(c1, p1)]] : _pb_cubic(p1, args, rel, angle, _i+1, _g, _r);
+    _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1, skip_first=true))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[[],pb_reflectPntOn(c1, p1)]] : _pb_cubic(p1, args, rel, angle, _i+1, _g, _r);
 
 module c(cx1, cy1, cx2, cy2, x, y){
     args = is_num(cx1)? [cx1, cy1, cx2, cy2, x, y] : cx1;
@@ -729,7 +753,7 @@ function _pb_smooth_cubic(last=[], args=[], rel=false, angle, ctrl_pts, _i=0, _g
     c1 = rel? last + [b[0],b[1]] : [b[0],b[1]],
     p1 = rel? last + [b[2],b[3]] : [b[2],b[3]],
     cn = pb_reflectPntOn(c1,p1),
-    _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1, sf=true))) _i==len(_g)-1? [_r,[], pb_calcExitAngle(_r),[[],cn]] : _pb_smooth_cubic(p1, args, rel, angle, [[],cn], _i+1, _g, _r);
+    _r = concat(_r, pb_bezier_cubic_curve(p0, c0, c1, p1, skip_first=true))) _i==len(_g)-1? [_r,[], pb_calcExitAngle(_r),[[],cn]] : _pb_smooth_cubic(p1, args, rel, angle, [[],cn], _i+1, _g, _r);
 
 module s(cx2, cy2, x, y, n=$pb_spline){
     args = is_num(cx2)? [cx2, cy2, x, y] : cx2;
@@ -761,7 +785,7 @@ function _pb_quadratic(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = le
     p0 = last,
     c = rel? last + [b[0],b[1]] : [b[0],b[1]],
     p1 = rel? last + [b[2],b[3]] : [b[2],b[3]],
-    _r = concat(_r, pb_bezier_quadratic_curve(p0, c, p1, sf=true))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[pb_reflectPntOn(c,p1),[]]] : _pb_quadratic(p1, args, rel, angle, _i+1, _g, _r);
+    _r = concat(_r, pb_bezier_quadratic_curve(p0, c, p1, skip_first=true))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[pb_reflectPntOn(c,p1),[]]] : _pb_quadratic(p1, args, rel, angle, _i+1, _g, _r);
 
 module q(cx, cy, x, y, n=$pb_spline){
     args = is_num(cx)? [cx, cy, x, y] : cx;
@@ -794,7 +818,7 @@ function _pb_smooth_quadratic(last=[], args=[], rel=false, angle, ctrl_pts, _i=0
     c = len(ctrl_pts[0])==2? ctrl_pts[0] : p0,
     p1 = rel? last + [b[0],b[1]] : [b[0],b[1]],
     cn = pb_reflectPntOn(c, p1),
-    _r = concat(_r, pb_bezier_quadratic_curve(p0, c, p1, sf=true))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[cn,[]]] : _pb_smooth_quadratic(p1, args, rel, angle, [cn,[]], _i+1, _g, _r);
+    _r = concat(_r, pb_bezier_quadratic_curve(p0, c, p1, skip_first=true))) _i==len(_g)-1? [_r,[],pb_calcExitAngle(_r),[cn,[]]] : _pb_smooth_quadratic(p1, args, rel, angle, [cn,[]], _i+1, _g, _r);
 
 module t(x, y, n=$pb_spline){
     args = is_num(x)? [x, y] : x;
@@ -829,7 +853,7 @@ function _pb_arc(last=[], args=[], rel=false, angle, _i=0, _g, _r=[]) = let(
     long = b[3],
     sweep = b[4],
     p2 = rel? last + [b[5], b[6]] : [b[5], b[6]],
-    d = pb_ellipseArc(last, p2, rx, ry, angle, long, sweep),
+    d = pb_ellipseArc(last, p2, rx, ry, angle, long, sweep, true),
     _r = concat(_r, d[0])) _i==len(_g)-1? [_r, [], pb_calcExitAngle(d[0]),[[],[]]] : _pb_arc(p2, args, rel, angle, _i+1, _g, _r);
 
 //  arc creates an ellipse according the x and y radius.
@@ -848,6 +872,7 @@ module a(rx, ry, angle, long, sweep, x, y){
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
+    echo("a",$children,parent_module(0));
     if (pb_do_render($children, parent_module(0))) pb_draw();
     children();    
 }
@@ -1006,6 +1031,7 @@ module chamfer(s){
 module pb_draw(){
     data1 = [$pb_pts, concat($pb_post, [[4,len($pb_pts)-1]])];
     points1 = pb_postProcessPathLists([data1]);
+    echo("pb_draw",points1);
     polygon(points1[0]);
     //if (pb_do_render($children, parent_module(0))) pb_draw();
     children();      
