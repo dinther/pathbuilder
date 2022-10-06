@@ -31,7 +31,7 @@ However the power of openSCAD is of course in its parametric capabilities. Altho
 Pathbuilder also offers access to every command directly in your code. Commands are simply chained just like you are used to with openSCAD. A polygon is drawn at the end of the command sequence. This way you can pass your parameters directly into pathbuilder commands.
 
 ![image](https://user-images.githubusercontent.com/1192916/194191591-ef2b22b1-cdb1-4212-a432-21c76471f459.png)
-In the above example I used pathbuilder to generate complex ship hull shapes. Here I made extensive use of the svgPoints() function which returns a list of coordinates rather than letting pathbuilder produce the polygon. The points are then processed to produce the polyhedron in the picture.
+In the above example I used pathbuilder to generate complex ship hull shapes. Here I made extensive use of the svgPoints() function which returns a list of coordinates rather than letting pathbuilder produce the polygon. The points are then processed to produce the polyhedron in the picture. The mesh is perfect and my 3D printer slicer didn't report anny issues.
 
 ## S bracket example
 
