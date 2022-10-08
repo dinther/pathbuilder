@@ -273,7 +273,7 @@ function pb_parseNum(s, _i=0, _n=0, _d=0, _r1=0, _r2=0) = _i==len(s)? s[0]=="-"?
 function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) = 
     _i>len(s)-1?  _cmds : let(
         //replace all "true" and "false" with 1 or 0
-        s = replace(replace(replace(replace(replace(replace(s,"FALSE", "0"),"False", "0"),"false", "0"),"TRUE", "1"),"True", "1"),"true", "1"),
+        //Do not use. Too damn slow...  s = replace(replace(replace(replace(replace(replace(s,"FALSE", "0"),"False", "0"),"false", "0"),"TRUE", "1"),"True", "1"),"true", "1"),
         l=len(s), c1 = s[_i], a1 = ord(c1), a2 = ord(s[min(l-1,_i+1)]), _d = a2==46? _d+1 : _d,
         //   0=number            1=sign                3=sep                 4=dot       2=char
         t1 = a1>47 && a1<58? 0 : a1==43 || a1==45? 1 : a1==32 || a1==44? 3 : a1==46? 4 : 2,
