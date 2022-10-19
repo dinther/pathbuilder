@@ -1,2 +1,38 @@
+### svgTweenPath demo
+
+svgTweenPath takes two pathBuilder SVG path strings and interpolates the path values between the start and end shape using a factor variable between 0 and 1. Both SVG path strings must have the same number AND sequence of commands.
+
+![image](https://user-images.githubusercontent.com/1192916/196597510-0f37de98-89d6-4778-9e3b-2a0f7ce9bb68.png)
+
+```
+include <pathbuilder.scad>
+
+//  This demo takes two svg paths and morphs the path parameters to create a 3D mesh
+
+$pb_spline = 20;
+
+module buildMeshFromPointLayers(pointLayers = [], sides = true, bottom=true, top=true){
+    n = len(pointLayers[0]);
+    pts = [for (deck=[0:1:len(pointLayers)-1]) each pointLayers[deck]];
+	faces = [for (d = [0:1:len(pointLayers)-2], p = [0:1:len(pointLayers[d])-2])	let(c = (n * d)+ p) [c,c+1, c+n+1,c+n]];
+    bottom_points = bottom? pointLayers[len(pointLayers)-1] : [];
+    bottom_faces = bottom? [for(i=[len(bottom_points)-1:-1:0]) i] : [];
+    top_points = top? pointLayers[0] : [];
+    top_faces = top? [for(i=[len(pts) - len(top_points):len(pts)-1]) i] : [];
+    with_top_faces = top? concat(sides? faces: [], [top_faces]) : sides? faces: [];
+    all_faces = bottom? concat(with_top_faces, [bottom_faces]) : with_top_faces;
+	polyhedron(points = pts, faces = all_faces, convexity = 10);
+} 
+
+//  Note that the path must be closed with Z. This is not strictly nessesary when used with polygons because
+//  polygons are always closed
+
+p1 = "M -1170 0 V -185 C -980 -336 -738 -305 -507 -305 H 330 C 668 -305 882 -124 1034 -66  C 1179 -8   1260 -13 1260 0Z";
+p2 = "M -1200 0 V -250 C -922 -353 -738 -345 -507 -345 H 330 C 548 -345 815 -287 1034 -215 C 1241 -143 1400 -57 1400 0Z";
+
+point_layers = [for (i=[0:0.2:1]) svgPoints(svgTweenPath(p1, p2, i),i*150)[0]];
+buildMeshFromPointLayers(point_layers, sides=true, bottom=true, top=true);
+```
+
 ### project_case.scad
 ![image](https://user-images.githubusercontent.com/1192916/153139548-ab34fd3d-5e7c-433b-9cf6-48fa8a1eebe7.png)
