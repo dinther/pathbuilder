@@ -36,7 +36,7 @@ function svgPoints(s) = pb_postProcessPathLists(pb_processCommands(pb_tokenizeSv
 //  module svgShape(s)
 //
 //  Processes a SVG path string and returns a 2D polygon.
-//  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
+//  path       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
 //  return  (polygon) polygon can be further handled by any openSCAD command.
 module svgShape(path="", _i=-2, _p=undef, _first_CW=undef){
     _p = _p==undef? svgPoints(path) : _p;
@@ -57,6 +57,32 @@ module svgShape(path="", _i=-2, _p=undef, _first_CW=undef){
         }
     }
 }
+
+
+//  function svgTweenPath(s)
+//
+//  Processes two similar paths where the command sequence is identical but the parameters are different.
+//  The return value is a path string that is either Path1, Path2 or somewhere in between depending on the factor value
+//  which must be somewhere between 0 and 1. This function is great to create in between splines.
+//  path1   (list)   String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
+//  path2   (list)   String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
+//  factor  (number) Number between 0 and 1 determining the path values of the return path.
+//  return  (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
+function svgTweenPath(path1="", path2="", factor=0) = let(
+    f = max(0, min(1, factor)),,
+    commandList1 = pb_tokenizeSvgPath(path1),
+    commandList2 = pb_tokenizeSvgPath(path2),
+    assert(len(commandList1) == len(commandList2), "path1 and path2 must have an equal number of commands."),
+    commandList = [for (i=[0:len(commandList1)-1]) let(
+            assert(commandList1[i][0] == commandList2[i][0], "Command mismatch. The command sequence of path1 and path2 must be identical.")
+        ) [commandList1[i][0],
+        [for(j=[0:len(commandList1[i][1])-1]) let(
+            v1 = commandList1[i][1][j],
+            v2 = commandList2[i][1][j]
+        ) v1 + ((v2-v1) * f)]]]
+) pb_commandListToPath(commandList);
+
+
 
 //  Helper functions:
 
@@ -112,14 +138,22 @@ function pb_last(pts) = let(l=is_list(pts)? len(pts) : 0) l==0? [0,0] : pts[l-1]
 //  return  (list)      sub list of items from the input list. Items can appear reversed when end references an index that is less than the start index.
 //
 //  examples:
-//      pb_sublist([0,1,2,3,4,5,6])        => [0,1,2,3,4,5,6] //  copies the list
-//      pb_sublist([0,1,2,3,4,5,6],3)      => [3,4,5,6]       //  starts at index 3 up to the end
-//      pb_sublist([0,1,2,3,4,5,6],3, 4)   => [3,4]           //  starts at index 3 up to end index 4
-//      pb_sublist([0,1,2,3,4,5,6],3, 2)   => [3,2]           //  starts at index 3 down to end index 2
-//      pb_sublist([0,1,2,3,4,5,6],-2)     => [5,6]           //  starts 2 before the end of the list up to the end
-//      pb_sublist([0,1,2,3,4,5,6],-3, -4) => [4,3]           //  starts 3 before the end of the list down to 4 before the end of the list
-//      pb_sublist([0,1,2,3,4,5,6],-1, 0)  => [6,5,4,3,2,1,0] //  Reverse list
+//      pb_subList([0,1,2,3,4,5,6])        => [0,1,2,3,4,5,6] //  copies the list
+//      pb_subList([0,1,2,3,4,5,6],3)      => [3,4,5,6]       //  starts at index 3 up to the end
+//      pb_subList([0,1,2,3,4,5,6],3, 4)   => [3,4]           //  starts at index 3 up to end index 4
+//      pb_subList([0,1,2,3,4,5,6],3, 2)   => [3,2]           //  starts at index 3 down to end index 2
+//      pb_subList([0,1,2,3,4,5,6],-2)     => [5,6]           //  starts 2 before the end of the list up to the end
+//      pb_subList([0,1,2,3,4,5,6],-3, -4) => [4,3]           //  starts 3 before the end of the list down to 4 before the end of the list
+//      pb_subList([0,1,2,3,4,5,6],-1, 0)  => [6,5,4,3,2,1,0] //  Reverse list
 function pb_subList(list, start=0, end) = let(l = len(list), s = start<0? l+start: start, e = end==undef? l-1 : end<0? l+end: end, sp=e<s? -1 : 1) [for(i=[s:sp:e]) list[i]];
+
+//  function pb_valuesToString(s)
+//
+//  Converts list into a continuous string adding the seperator in between each item.
+//  list        (list)   List of values.
+//  separator   (string) Separator string that will be inserted between each item in the list.
+//  return      (string) String containing all items from the list.
+function pb_valuesToString(list, seperator=",", _i=0, _s="") = _i>len(list)-1? _s : pb_valuesToString(list, seperator, _i+1, str(_s, list[_i],_i==len(list)-1? "" : seperator));
 
 
 //  string handling code from rColyer on Github
@@ -270,10 +304,26 @@ function pb_parseNum(s, _i=0, _n=0, _d=0, _r1=0, _r2=0) = _i==len(s)? s[0]=="-"?
         _d = o == 46? _i+1 : _d, c = (o>47 && o<58), _r1 = c&&_d==0? _r1*10+(o-48) : _r1, _r2 = c&&_d!=0? _r2+(o-48) * pow(10,-_i+_d-1) : _r2
     ) pb_parseNum(pb_replacechar(s), f==0? _i+1 : len(s), _n, _d, _r1, _r2) * pow(10,f);
 
+//  function pb_commandListToPath(commandList)
+//
+//  Converts command list into a path string.
+//  commandList (list)    List of SVG and Pathbuilder commands. Each item consists of a command identifier and a number list.
+//  return      (string)  String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
+function pb_commandListToPath(commandList = []) =
+    pb_valuesToString([for(command = commandList) str(command[0],pb_valuesToString(command[1]))],"");
+           
+//  function pb_tokenizeSvgPath(s)
+//
+//  Parses a path string and turns it into a command list.
+//  s       (list)  String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
+//  return  (list)  Command list
+//              command (string)    Command identifier
+//              values  (list)      Values associated with the command
+//                  value  (number) Value associated with the command
 function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) = 
     _i>len(s)-1?  _cmds : let(
         //replace all "true" and "false" with 1 or 0
-        //Do not use. Too damn slow...  s = replace(replace(replace(replace(replace(replace(s,"FALSE", "0"),"False", "0"),"false", "0"),"TRUE", "1"),"True", "1"),"true", "1"),
+        //s = replace(replace(replace(replace(replace(replace(s,"FALSE", "0"),"False", "0"),"false", "0"),"TRUE", "1"),"True", "1"),"true", "1"),
         l=len(s), c1 = s[_i], a1 = ord(c1), a2 = ord(s[min(l-1,_i+1)]), _d = a2==46? _d+1 : _d,
         //   0=number            1=sign                3=sep                 4=dot       2=char
         t1 = a1>47 && a1<58? 0 : a1==43 || a1==45? 1 : a1==32 || a1==44? 3 : a1==46? 4 : 2,
@@ -324,7 +374,7 @@ function pb_processCommandLists(cmds_list) = [for (cmds=cmds_list) pb_processCom
 //          return[3][1]    (list)  2D point representing the control point of the last command which must have been a cubic spline type. Otherwise empty ([])
 
 function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) = 
-        assert(is_list(cmds) && len(cmds) > 0 && (cmds[0][0] == "m" || cmds[0][0] == "M"), str("cmds must be a list and start with a m (move) command but started with ",cmds[0][0]))
+        assert(is_list(cmds) && len(cmds) > 0 && (cmds[0][0] == "m" || cmds[0][0] == "M"), str("cmds must be a list and start with a M (move) command but started with ",cmds[0][0]))
         _i==len(cmds)? concat(_f,[[_r[0],concat(_r[1],[[4,len(_r[0])-1]])]]) : let(
         cmd = cmds[_i],
         o = ord(cmd[0]),
@@ -1029,7 +1079,6 @@ module chamfer(s){
 module pb_draw(){
     data1 = [$pb_pts, concat($pb_post, [[4,len($pb_pts)-1]])];
     points1 = pb_postProcessPathLists([data1]);
-//
     polygon(points1[0]);
     //if (pb_do_render($children, parent_module(0))) pb_draw();
     children();      
