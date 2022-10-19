@@ -2,7 +2,7 @@
 
 svgTweenPath takes two pathBuilder SVG path strings and interpolates the path values between the start and end shape using a factor variable between 0 and 1. Both SVG path strings must have the same number AND sequence of commands.
 
-![image](https://user-images.githubusercontent.com/1192916/196597510-0f37de98-89d6-4778-9e3b-2a0f7ce9bb68.png)
+![image](https://user-images.githubusercontent.com/1192916/196610075-ef84996e-5148-4dd4-baef-17a06771d73f.png)
 
 ```
 include <pathbuilder.scad>
