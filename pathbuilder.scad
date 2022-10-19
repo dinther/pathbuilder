@@ -29,9 +29,11 @@ $pb_spline = 10;
 //  function svgPoints(s)
 //
 //  Processes a SVG path string and returns a 2D point list. This allows user point manipulation before the points are used.
-//  s       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
-//  return  (list) List of lists of 2D points that each outline the intended SVG path. Can be directly consumend by the polygon command.
-function svgPoints(s) = pb_postProcessPathLists(pb_processCommands(pb_tokenizeSvgPath(s)));
+//  path    (list)    String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
+//  return  (list)    List of lists of 2D points that each outline the intended SVG path. Can be directly consumed by the polygon command.
+function svgPoints(path, z=undef) = let(
+    pointlists = pb_postProcessPathLists(pb_processCommands(pb_tokenizeSvgPath(path)))
+) z==undef? pointlists : [for (pts=pointlists) translate_pts(pts,[0,0,z])];
 
 //  module svgShape(s)
 //
@@ -58,7 +60,6 @@ module svgShape(path="", _i=-2, _p=undef, _first_CW=undef){
     }
 }
 
-
 //  function svgTweenPath(s)
 //
 //  Processes two similar paths where the command sequence is identical but the parameters are different.
@@ -72,11 +73,11 @@ function svgTweenPath(path1="", path2="", factor=0) = let(
     f = max(0, min(1, factor)),,
     commandList1 = pb_tokenizeSvgPath(path1),
     commandList2 = pb_tokenizeSvgPath(path2),
-    assert(len(commandList1) == len(commandList2), "path1 and path2 must have an equal number of commands."),
+    a = assert(len(commandList1) == len(commandList2), "path1 and path2 must have an equal number of commands."),
     commandList = [for (i=[0:len(commandList1)-1]) let(
-            assert(commandList1[i][0] == commandList2[i][0], "Command mismatch. The command sequence of path1 and path2 must be identical.")
+        a = assert(commandList1[i][0] == commandList2[i][0], "Command mismatch. The command sequence of path1 and path2 must be identical.")
         ) [commandList1[i][0],
-        [for(j=[0:len(commandList1[i][1])-1]) let(
+        len(commandList1[i][1])==0? [] : [for(j=[0:len(commandList1[i][1])-1]) let(
             v1 = commandList1[i][1][j],
             v2 = commandList2[i][1][j]
         ) v1 + ((v2-v1) * f)]]]
@@ -114,6 +115,15 @@ function pb_calcExitAngle(pts=[],angle) = let(
 //  pc      (list)  (default=[0,0])  List of two numbers representing the 2D center point around which p1 is rotated
 //  return  (list)  List of two numbers representing the new rotated point.
 function pb_reflectPntOn(p1=[], pc=[0,0]) = pc + (p1-pc)*-1;
+
+//  translate_pts(pts, translate)
+//
+//  translates points in point list.
+//  pts        (list)  List of 2D or 3D points.
+//  translate  (list)  List of three two numbers representing the 3D vector to translate the points with
+//  return  (list)  List of translated 3D points.
+function translate_pts(pts, translate=[0,0,0])= [for(p=pts)[p[0]+translate[0],p[1]? p[1]+translate[1] : translate[1], p[2]? p[2]+translate[2] : translate[2]]];
+
 
 //  function  pb_segmentsPerCircle(r)
 //
@@ -342,7 +352,8 @@ function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) =
         t1==0&&t2==4&&_d>1? 11 :    //  num to next dot
         0,                          //  not important
         dc = c==6 || c==7 || c==8 || c==9? 0 : _d,
-        w = t1!=3&&(c1!="z" && c1!="Z")? str(_w,c1) : _w,
+        //w = t1!=3&&(c1!="z" && c1!="Z)? str(_w,c1) : _w,
+        w = t1!=3? str(_w,c1) : _w,
         //w = t1!=3? str(_w,c1) : _w,
         _cmd = c>0||t2==5? t1==2? [w,[]] : [_cmd[0],concat(_cmd[1],[pb_parseNum(w)])] : _cmd,
         _cmds = (t1==0 || t1==3 || t2==5) && (t2==2|| t2==5)? concat(_cmds, [_cmd]) : _cmds,
@@ -400,6 +411,8 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) =
             c=="T"? _pb_smooth_quadratic(l, cmd[1], false, a, ctl) :
             c=="a"? _pb_arc(l, cmd[1], true, a) :
             c=="A"? _pb_arc(l, cmd[1], false, a) :
+            c=="z"? _pb_close(_r[0], a) :
+            c=="Z"? _pb_close(_r[0], a) :
             c=="polar"? _pb_polar(_r[0], [cmd[1][0], cmd[1][1]+a]) :
             c=="Polar"? _pb_polar(_r[0], cmd[1]) :
             c=="forward"? _pb_forward(l, cmd[1], true, a) :
@@ -703,6 +716,20 @@ module V(y){
     if (pb_do_render($children, parent_module(0))) pb_draw();
     children();      
 }
+
+//  function _pb_close(last, rel, args, angle)
+//
+//  Adds a point vertically from the last point y units away.
+//  pts     (list)  The point list being constructed.
+//  args    (list)  Function specific parameters.
+//      args[0]  (number)  Distance along y axis either relative or absolute
+//  rel     (bool)  Set to false when working with relative values. Set to true when working with absolute values.
+//  angle   (number)  Last known angle. Returned when no new angle is created.
+//  return  (list)  List of a command response alwas consisting of
+//      return[0]  (list)    2D points list of the points generated by the command. The list is empty if not relevant.
+//      return[1]  (list)    List representing a post processing command. The list is empty if not relevant.
+//      return[2]  (number)  New current angle after the command completed. 
+function _pb_close(pts=[], angle, _i=0, _g, _r=[]) = _pb_line(pts, false, pb_last(pts)!= pts[0]? pts[0] : [], angle, false);
 
 //  function _pb_line
 //

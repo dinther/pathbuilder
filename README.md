@@ -97,9 +97,10 @@ Most path commands have an uppercase and a lowercase version in Pathbuilder. Thi
 When using the SVG path syntax in string format you will need to call a function to have the commands in the string processed. The main two are at the top of this list. The other three are more useful as debugging tools.
 
 |Command|Code|Description|
-|-------|----|-------|
+|-------|------|-------|
 |svgShape|`svgShape(path_string)`|This command takes a svg path string as input and creates a polygon with the defined shape. Segmentation of curves are according $fn, $fa, $fs and $pb_spline.|
 |svgPoints|`svgPoints(path_string)`|This command takes a svg path string as input and returns a 2D point list. Here you can do additional processing of your shape data.|
+|svgTweenPath|`svgTweenPath(path1, path2, factor)`|This command takes two similar svg path strings as input and returns a in between path string based on the factor value between 0 and 1. This is ideal to create complex morphing between curves which then can be used to create complex 3D meshes in the upcoming meshBuilder. Tweens are only possible when both SVG paths have the same command count and sequence.|
 |pb_tokenizeSvgPath|`pb_tokenizeSvgPath(path_string)`|Turns the path string into a list of unambiguous commands and returns this command_list. Useful for debugging.|
 |pb_processCommands|`pb_processCommands(command_list)`|Executes the commands in the list and builds up a point list and a post processing list. These two lists are returned in a data list.|
 |pb_postProcessPath|`pb_postProcessPath(data)`|Post processing involves applying fillets and chamfers now the main shape is known. A 2D point list is returned.
