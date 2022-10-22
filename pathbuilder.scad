@@ -386,7 +386,7 @@ function pb_processCommandLists(cmds_list) = [for (cmds=cmds_list) pb_processCom
 //  function pb_processCommands(cmds)
 //
 //  Processes all the commands in the command list and generates a preliminary 2D point list and a post process command list
-//  When finished, the point list contains all points except fillet and chamfer. Those are applied in a seprate pb_postProcessPath command.
+//  When finished, the point list contains all points except fillet, chamfer and z. Those are applied in a seprate pb_postProcessPath command.
 //  cmds    (list)  List of path commands
 //  return  (list)  Intermediate 2D points list and post processing list
 //      return[0]   (list)   List with 2D points.
@@ -423,8 +423,10 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) =
             c=="T"? _pb_smooth_quadratic(l, cmd[1], false, a, ctl) :
             c=="a"? _pb_arc(l, cmd[1], true, a) :
             c=="A"? _pb_arc(l, cmd[1], false, a) :
-            c=="z"? _pb_close(_r[0], a) :
-            c=="Z"? _pb_close(_r[0], a) :
+            //c=="z"? _pb_close(_r[0], a) :
+            //c=="Z"? _pb_close(_r[0], a) :
+            c=="z"? _pb_close1(_r[0], cmd[1], a) :
+            c=="Z"? _pb_close1(_r[0], cmd[1], a) :
             c=="polar"? _pb_polar(_r[0], [cmd[1][0], cmd[1][1]+a]) :
             c=="Polar"? _pb_polar(_r[0], cmd[1]) :
             c=="forward"? _pb_forward(l, cmd[1], true, a) :
@@ -441,6 +443,10 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) =
 
 
 //  Applies fillets and chamfer commands to the raw point list
+//  chamfer = 2
+//  fillet  = 3
+//  z       = 4
+
 function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
     let(
         pts = pb_removeAdjacentDuplicates(data[0]),
@@ -448,7 +454,6 @@ function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
         l = len(steps),
         first_pt = steps[1][1]==0? [] : [pts[0]],
         last_pt = steps[l-2][1]==len(pts)-1? [] : [pts[len(pts)-1]],
-
         result = [for (i = [0: len(steps)-2]) let(
             step = data[1][i],
             next_step = data[1][i+1],
@@ -459,8 +464,11 @@ function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
             fill = (step[0]==2 && i1!=i2)? pb_fillet(pts, i1, i2, $fn=data[1][i][3]) : [],
             chamf = (step[0]==3 && i1!=i2)? pb_chamfer(pts, i1, i2) : [],
             post = start+1<=end-1?pb_subList(pts, start+1, end-1) : []
-        ) for (p=concat(fill, chamf, post)) p]
-    ) concat(first_pt, result,last_pt)];
+        ) for (p=concat(fill, chamf, post)) p],
+        r = concat(first_pt, result, last_pt),
+        rr = concat(r, len(steps)>0 && pb_last(steps)[0]==4? [r[0]] : [])
+    ) rr];
+
     
 //  Calculates tangent fillet for any given point in a closed points list. Flip the curve by setting the radius negative.    
 function pb_fillet(pts, index, radius) = let(
@@ -751,6 +759,9 @@ module V(y){
 //      return[2]  (number)  New current angle after the command completed. 
 function _pb_close(pts=[], angle, _i=0, _g, _r=[]) = pb_last(pts)!= pts[0]? _pb_line(pts, false, pts[0], angle, false) :
     [[], [], angle,[[],[]]];
+
+function pb_close1(pts=[]) = [pts[0]];
+function _pb_close1(pts, args=[], angle) = [[],args[0]==0? [] : [[4,len(pts)-1, args[0]]],angle,[[],[]]];
 
 //  function _pb_line
 //
