@@ -16,7 +16,7 @@ at the top of your code unit and you are ready to go. Copy this code into a new 
 ```
 include <pathbuilder.scad>
 
-svgShape("m 0 0chamfer8h20fillet2v20fillet10h20v-10fillet2l35 20fillet2l-35 20fillet2v-10h-40fillet30z");
+svgShape("m 0 0chamfer8h20fillet2v20fillet10h20v-10fillet2l35 20fillet2l-35 20fillet2v-10h-40fillet30");
 ```
 You should see this.
 
