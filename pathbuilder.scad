@@ -33,7 +33,7 @@ $pb_spline = 10;
 //  return  (list)    List of lists of 2D points that each outline the intended SVG path. Can be directly consumed by the polygon command.
 function svgPoints(path, z=undef) = let(
     pointlists = pb_postProcessPathLists(pb_processCommands(pb_tokenizeSvgPath(path)))
-) z==undef? pointlists : [for (pts=pointlists) translate_pts(pts,[0,0,z])];
+) z==undef? pointlists : [for (pts=pointlists) pb_translate_pts(pts,[0,0,z])];
 
 //  module svgShape(s)
 //
@@ -74,7 +74,7 @@ function svgTweenPath(path1="", path2="", factor=0) = let(
     commandList1 = pb_tokenizeSvgPath(path1),
     commandList2 = pb_tokenizeSvgPath(path2),
     a = assert(len(commandList1) == len(commandList2), "path1 and path2 must have an equal number of commands."),
-    commandList = [for (i=[0:len(commandList1)-1]) let(
+    commandList = [for (i=[0:1:len(commandList1)-1]) let(
         a = assert(commandList1[i][0] == commandList2[i][0], "Command mismatch. The command sequence of path1 and path2 must be identical.")
         ) [commandList1[i][0],
         len(commandList1[i][1])==0? [] : [for(j=[0:len(commandList1[i][1])-1]) let(
@@ -116,13 +116,13 @@ function pb_calcExitAngle(pts=[],angle) = let(
 //  return  (list)  List of two numbers representing the new rotated point.
 function pb_reflectPntOn(p1=[], pc=[0,0]) = pc + (p1-pc)*-1;
 
-//  translate_pts(pts, translate)
+//  pb_translate_pts(pts, translate)
 //
 //  translates points in point list.
 //  pts        (list)  List of 2D or 3D points.
 //  translate  (list)  List of three two numbers representing the 3D vector to translate the points with
 //  return  (list)  List of translated 3D points.
-function translate_pts(pts, translate=[0,0,0])= [for(p=pts)[p[0]+translate[0],p[1]? p[1]+translate[1] : translate[1], p[2]? p[2]+translate[2] : translate[2]]];
+function pb_translate_pts(pts, translate=[0,0,0])= [for(p=pts)[p[0]+translate[0],p[1]? p[1]+translate[1] : translate[1], p[2]? p[2]+translate[2] : translate[2]]];
 
 
 //  function  pb_segmentsPerCircle(r)
@@ -164,6 +164,18 @@ function pb_subList(list, start=0, end) = let(l = len(list), s = start<0? l+star
 //  separator   (string) Separator string that will be inserted between each item in the list.
 //  return      (string) String containing all items from the list.
 function pb_valuesToString(list, seperator=",", _i=0, _s="") = _i>len(list)-1? _s : pb_valuesToString(list, seperator, _i+1, str(_s, list[_i],_i==len(list)-1? "" : seperator));
+
+
+
+//  function pb_removeAdjacentDuplicates(s)
+//
+//  Removes adjacent duplicate points
+//  pts             (list)    List of points.
+//  testLastToFirst (boolean) Set to false if you want to skip testing last point to first point.
+//  return          (string)  String containing all items from the list.
+function pb_removeAdjacentDuplicates(pts=[], testLastToFirst=true, _i=0, _r=[]) = let(
+    l = len(pts), _n = testLastToFirst? (_i==l-1? 0: _i+1) : _i+1
+) _i<l? pb_removeAdjacentDuplicates(pts, testLastToFirst, _i+1, pts[_i] == pts[_n]? _r : concat(_r,[pts[_i]])) : _r;
 
 
 //  string handling code from rColyer on Github
@@ -427,20 +439,25 @@ function pb_processCommands(cmds=[], _i=0, _r=[[],[],0,[[],[]]], _f=[]) =
         r = c=="m" || c=="M"? d : d==[]? _r : [concat(_r[0], d[0]),concat(_r[1], d[1]), is_num(d[2])? d[2] : _r[2],d[3]]
     ) pb_processCommands(cmds, _i+1, c=="m" || c=="M"? d : d==[]? _r : [concat(_r[0], d[0]),concat(_r[1], d[1]), is_num(d[2])? d[2] : _r[2],is_list(d[3])? d[3]: [[],[]]], _f);
 
+
+//  Applies fillets and chamfer commands to the raw point list
 function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
     let(
-        pts = data[0],
+        pts = pb_removeAdjacentDuplicates(data[0]),
         steps = data[1],
         l = len(steps),
         first_pt = steps[1][1]==0? [] : [pts[0]],
         last_pt = steps[l-2][1]==len(pts)-1? [] : [pts[len(pts)-1]],
+
         result = [for (i = [0: len(steps)-2]) let(
             step = data[1][i],
             next_step = data[1][i+1],
             start = step[1],
             end = next_step[1],
-            fill =  step[0]==2? pb_fillet(pts, step[1], data[1][i][2], $fn=data[1][i][3]) : [],
-            chamf = step[0]==3? pb_chamfer(pts, step[1], data[1][i][2]) : [],
+            i1 = step[1],
+            i2 = data[1][i][2],
+            fill = (step[0]==2 && i1!=i2)? pb_fillet(pts, i1, i2, $fn=data[1][i][3]) : [],
+            chamf = (step[0]==3 && i1!=i2)? pb_chamfer(pts, i1, i2) : [],
             post = start+1<=end-1?pb_subList(pts, start+1, end-1) : []
         ) for (p=concat(fill, chamf, post)) p]
     ) concat(first_pt, result,last_pt)];
@@ -470,6 +487,12 @@ function pb_fillet(pts, index, radius) = let(
 ) ps;
 
 //  Calculates a balanced symetrical chamfer for a given point  
+//  pts     (list)   List of 2D points.
+//  index   (number) Index to the point for which a chamfer is required.
+//  size    (number) Size for the requested chamfer width
+//  return  (list)   List of two points representing the chamfer line that can replace the given point by index.
+//                   The original point is returned when size is zero or when either point adjacent to index
+//                   sharing the same coordinates.
 function pb_chamfer(pts, index, size) = let(
     a = index==0? pts[len(pts)-1] : pts[index-1],
     b = pts[index],
@@ -488,7 +511,7 @@ function pb_chamfer(pts, index, size) = let(
     bg = bc_u*bf_length,
     f = b + bf,
     g = b + bg
-) [f, g];
+) (size<=0 || a==b || b==c)? [b] : [f, g];
 
 //  function pb_ellipseCenter(p1, p2, rx, ry, angle, long, ccw)
 //
