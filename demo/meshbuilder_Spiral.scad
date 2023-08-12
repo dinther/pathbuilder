@@ -7,20 +7,16 @@ function rotate(x, y, z, angle) = let (
     nx = (c * x) + (s * y),
     ny = (c * y) - (s * x)) [nx, ny, z];
 
-points = [[5,0,0],[5,0,0.3],[12,0,0.3],[12,0,0]];
-angle = 720;
-angle_step = 10;
-p1 = [for(i=[0:angle_step:angle-1])
-    rotate( points[0][0],points[0][1], points[0][2]+i*0.01, i)];
-p2 = [for(i=[0:angle_step:angle-1])
-    rotate( points[1][0],points[1][1], points[1][2]+i*0.01, i)];
-p3 = [for(i=[0:angle_step:angle-1])
-    rotate( points[2][0],points[2][1], points[2][2]+i*0.01, i)];
-p4 = [for(i=[0:angle_step:angle-1])
-    rotate( points[3][0],points[3][1], points[3][2]+i*0.01, i)];
-n = len(p1);
-
+module spiral(shape, angle, step, pitch){
+l = len(shape);
+pl = [for(j=[0:l]) let(k=(j==l? 0:j)) [for(i=[0:step:angle-1])
+    rotate( shape[k][0],shape[k][1], shape[k][2]+i*pitch/360, i)]];
+n = len(pl[0]);
 //  Manually add end caps
-faces = [[0, n, n * 2, n * 3],[n-1, n*2-1, n*3-1, n*4-1]];
+front_cap = [for(i=[0:l-1]) n*i];
+end_cap = [for(i=[1:l]) n*i-1];
+faces = [front_cap,end_cap];
+buildMeshFromPointLayers(pl, true, false, false, false, faces);
+}
 
-buildMeshFromPointLayers([p1,p2,p3,p4,p1], true, false, false, false, faces);
+spiral([[5,0,0],[5,0,0.3],[12,0,0.3],[12,0,0]], 720, 10, 3.6);
