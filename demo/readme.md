@@ -39,3 +39,8 @@ mirror([0,1,0]) buildMeshFromPointLayers(point_layers, sides=true, bottom=true, 
 
 ### project_case.scad
 ![image](https://user-images.githubusercontent.com/1192916/153139548-ab34fd3d-5e7c-433b-9cf6-48fa8a1eebe7.png)
+
+### Meshbuilder spiral
+An advanced demo of a spiral generated with meshbuilder.
+![image](https://github.com/dinther/pathbuilder/assets/1192916/55d10e56-c8f3-4bee-a741-c41f9095e43c)
+
