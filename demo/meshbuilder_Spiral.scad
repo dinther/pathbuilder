@@ -16,8 +16,8 @@ module spiral(shape, angle, step, pitch){
     n = len(pl[0]);
     //  Manually add end caps
     front_cap = [for(i=[0:l-1]) n*i];
-    end_cap = [for(i=[l:-1:0]) n*i-1];
-    faces = [front_cap,end_cap];
+    end_cap = [for(i=[l:-1:1]) n*i-1];
+    faces = [front_cap, end_cap];
     buildMeshFromPointLayers(pl, true, false, false, false, faces);
 }
 
