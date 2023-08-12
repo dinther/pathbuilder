@@ -21,12 +21,9 @@ faces = [front_cap,end_cap];
 buildMeshFromPointLayers(pl, true, false, false, false, faces);
 }
 
-
-
-//M(5,0) h(1) a(10,10,0, 0, 1, 10,0) h(1) v(-2) H(5);
 points = svgPoints("m5,0 h1 a10,10,0,0,1,10,0h1,v-2 H5")[0];
 
 //  swap y and z axis
 shape = [for(pt = points) [pt[0],0,pt[1]]];
-   echo(shape); 
+ 
 spiral(shape, 720, 5, 14);
