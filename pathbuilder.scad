@@ -70,7 +70,7 @@ module svgShape(path="", _i=-2, _p=undef, _first_CW=undef){
 //  factor  (number) Number between 0 and 1 determining the path values of the return path.
 //  return  (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
 function svgTweenPath(path1="", path2="", factor=0) = let(
-    f = max(0, min(1, factor)),,
+    f = max(0, min(1, factor)),
     commandList1 = pb_tokenizeSvgPath(path1),
     commandList2 = pb_tokenizeSvgPath(path2),
     a = assert(len(commandList1) == len(commandList2), "path1 and path2 must have an equal number of commands."),
@@ -457,10 +457,8 @@ function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
             next_step = data[1][i+1],
             start = step[1],
             end = next_step[1],
-            i1 = step[1],
-            i2 = data[1][i][2],
-            fill = (step[0]==2 && i1!=i2)? pb_fillet(pts, i1, i2, $fn=data[1][i][3]) : [],
-            chamf = (step[0]==3 && i1!=i2)? pb_chamfer(pts, i1, i2) : [],
+            fill = (step[0]==2)? pb_fillet(pts, step[1], step[2], step[3]) : [],
+            chamf = (step[0]==3)? pb_chamfer(pts, step[1], step[2]) : [],
             post = start+1<=end-1?pb_subList(pts, start+1, end-1) : []
         ) for (p=concat(fill, chamf, post)) p],
         r = concat(first_pt, result, last_pt),
@@ -469,7 +467,12 @@ function pb_postProcessPathLists(data_list =[]) = [for (data=data_list)
 
     
 //  Calculates tangent fillet for any given point in a closed points list. Flip the curve by setting the radius negative.    
-function pb_fillet(pts, index, radius) = let(
+//  pts     (list)     List of 2D points.
+//  index   (number)   Index to the point for which a fillet is required.
+//  radius  (number)   Radius for the requested fillet
+//  segments(number)   Optional fixed number of segments to draw the fillet.        
+//  return  (segments) List of points representing the fillet curve that can replace the given point by index.
+function pb_fillet(pts, index, radius, segments=0) = let(
     a = index==0? pts[len(pts)-1] : pts[index-1],
     b = pts[index],
     c = index == len(pts)-1? pts[0]:pts[index+1],
@@ -489,7 +492,7 @@ function pb_fillet(pts, index, radius) = let(
     e1=assert(tan_half_angle!=0, "Fillet is not possible on angles of 0 degrees"),
     e2=assert(bf_length<l1 || bf_length<l2, str("Fillet can not be applied. Max radius is ",min(l1, l2))),
     sig = sign(ba[0] * bc[1] - ba[1] * bc[0]) * (radius<0? -1 : 1),
-    ps = pb_curveBetweenPoints(f, g, abs(radius) * sig)[0]
+    ps = pb_curveBetweenPoints(f, g, abs(radius) * sig, segments)[0]
 ) ps;
 
 //  Calculates a balanced symetrical chamfer for a given point  
@@ -585,7 +588,7 @@ function pb_ellipseArc(p1=[], p2=[], rx, ry, angle=0, long=false, ccw=false, ski
 //      return[0]    (list)   List of the 2D point list describing the curve. The list includes p1 and p2.
 //      return[1]    (number) Angle of the last line segment in the curve
 //      return[2]    (list)   List of two numbers representing a 2D point. This point is the center of the circle segment drawn.
-function pb_curveBetweenPoints(p1=[], p2=[], radius=0) = radius==0? [p1,p2] : let(
+function pb_curveBetweenPoints(p1=[], p2=[], radius=0, segments=0) = radius==0? [p1,p2] : let(
     d = norm(p2-p1),
     r = abs(radius),
     e = assert(r*2>=d, str("Radius:",r," is too small for distance:",d)),
@@ -600,7 +603,7 @@ function pb_curveBetweenPoints(p1=[], p2=[], radius=0) = radius==0? [p1,p2] : le
     da = a2 - a1 % 360,
     cda = da<-180? 360 + da : da>180? -360 + da : da,
     //steps = floor(abs(cda*($fn==0? 1/$fa : $fn/360))),
-    steps = floor(abs(cda * pb_segmentsPerCircle(radius) / 360)),
+    steps = segments==0? floor(abs(cda * pb_segmentsPerCircle(radius) / 360)) : segments,
     sa = cda/steps,
     pts = steps<=2? [p1,p2] : [p1,for(i=[1:steps-1]) [sin(a1 + (sa * i)) * r + pc[0], cos(a1 + (sa * i)) * r + pc[1]],p2]
 ) [pts,sign(sa)*90+a1+cda, pc];
@@ -1060,7 +1063,7 @@ function _pb_segment(last=[], args=[], rel=false, _i=0, _r=[]) = let(
     pt2 = rel? last+groups[1][_i] : groups[1][_i],
     data = pb_curveBetweenPoints(last, pt2, r),
     _r = concat(_r, pb_subList(data[0], 1))
-    ) _i==len(groups[1])-1? [_r,[],data[1],[[],[]]] : pb_segment(last=pt2, args=args, rel, _i=_i+1, _r=_r);
+    ) _i==len(groups[1])-1? [_r,[],data[1],[[],[]]] : _pb_segment(last=pt2, args=args, rel, _i=_i+1, _r=_r);
 
 module segment(x, y, r){
     l = pb_last($pb_pts);
@@ -1106,10 +1109,10 @@ module Angle(a){
     children();  
 }
 
-//  Inserts a fillet at the current point with the given radius. set radius to negative to turn the fillet outwards
+//  Inserts a fillet at the current point with the given radius and optional fixed number of segments. set radius to negative to turn the fillet outwards
 function _pb_fillet(pts, args=[], angle) = [[],args[0]==0? [] : [[2, len(pts)-1, args[0], args[1]? args[1] : $fn]],angle];
-module fillet(r){
-    data = _pb_fillet($pb_pts, [r, $fn], $pb_angle);
+module fillet(r, s){
+    data = _pb_fillet($pb_pts, [r, s], $pb_angle);
     $pb_post = concat($pb_post, data[1]);  //  fillet tag
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
