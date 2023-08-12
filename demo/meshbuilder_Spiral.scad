@@ -1,6 +1,8 @@
 use <pathbuilder.scad>
 use <meshbuilder.scad>
 
+$fn=128;
+
 function rotate(x, y, z, angle) = let (
     c = cos(angle),
     s = sin(angle),
@@ -19,4 +21,12 @@ faces = [front_cap,end_cap];
 buildMeshFromPointLayers(pl, true, false, false, false, faces);
 }
 
-spiral([[5,0,0],[5,0,0.3],[12,0,0.3],[12,0,0]], 720, 10, 3.6);
+
+
+//M(5,0) h(1) a(10,10,0, 0, 1, 10,0) h(1) v(-2) H(5);
+points = svgPoints("m5,0 h1 a10,10,0,0,1,10,0h1,v-2 H5")[0];
+
+//  swap y and z axis
+shape = [for(pt = points) [pt[0],0,pt[1]]];
+   echo(shape); 
+spiral(shape, 720, 5, 14);
