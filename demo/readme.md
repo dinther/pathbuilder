@@ -42,6 +42,7 @@ mirror([0,1,0]) buildMeshFromPointLayers(point_layers, sides=true, bottom=true, 
 
 ### Meshbuilder spiral
 An advanced demo of a spiral generated with meshbuilder.
-![image](https://github.com/dinther/pathbuilder/assets/1192916/9b3fa1c3-b2ce-465f-9cc5-575a8cd41629)
+![image](https://github.com/dinther/pathbuilder/assets/1192916/bcef11be-5208-4ec0-b845-a0dca418b3fa)
+
 
 
