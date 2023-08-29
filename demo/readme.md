@@ -1,6 +1,6 @@
 ### TwistedMesh
-![image](https://github.com/dinther/pathbuilder/assets/1192916/e2090e37-25cc-45be-b980-2774dfd00027)
-PathBuilder, MeshBuilder and pointutils in action together.
+![image](https://github.com/dinther/pathbuilder/assets/1192916/893ae496-a8c5-4daf-9742-44e57afd675d)
+PathBuilder, MeshBuilder and pointutils in action together. With these tools you have absolute control over the dimensions and it is FAST. No boolean operations. Meshbuilder just spits out a mesh.
 
 ### svgTweenPath demo
 
