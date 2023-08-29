@@ -4,12 +4,28 @@ use <pointutils.scad>
 
 $fn = 32;
 
-svgString = "m0,0v5h27.5fillet3V30fillet8H60v-5h-27.5fillet3V0fillet8H0";
+angle=180;
+start_radius = 40;
+end_radius = 10;
 
-//  Example of shape used
-svgShape(svgString);
+//  Building a 2D profile
+//  svgPoints returns a list of paths but for a
+//  simple enclosed shape there is only one path.
+//  So we grab the one at index 0.
+shape = svgPoints("m0,0v5h27.5fillet3V30fillet8H60v-5h-27.5fillet3V0fillet8H0")[0];
+
+//  This is what it looks like
+color("blue") polygon(shape);
 
 //  Building the mesh
-lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(rotatePoints(scalePoints(svgPoints(svgString)[0],[1.2-(1*i),1.2-(1*i)]),[0,0,-i*0]),[40 - (i*10), 0, 0]),[0,i*150])];
+
+//  Now we are going to  manipulate the shape point list
+//  many times inside a loop counting from 0 to 1 in small steps
+//  You see here several manipulation functions nested.
+
+lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(scalePoints(shape,[1.2-(1*i),1,1]),[start_radius + (i*(end_radius - start_radius)), 0, 0]),[0,i*-angle,0])];
 buildMeshFromPointLayers(lp, true, true, true,true);
+
+//  Multiply the number of paths and points per path
+//  to get the total number of vertices for the mesh.
 echo(str(len(lp) * len(lp[0]), " vertices used"));
