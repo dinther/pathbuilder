@@ -2,7 +2,7 @@
 PathBuilder, MeshBuilder and pointutils in action together. With these tools you have absolute control over the dimensions and it is FAST. No boolean operations. Meshbuilder just spits out a mesh.
 ![image](https://github.com/dinther/pathbuilder/assets/1192916/893ae496-a8c5-4daf-9742-44e57afd675d)
 
-'''
+```
 use <pathbuilder.scad>
 use <meshbuilder.scad>
 use <pointutils.scad>
@@ -18,7 +18,7 @@ svgShape(svgString);
 lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(rotatePoints(scalePoints(svgPoints(svgString)[0],[1.2-(1*i),1.2-(1*i)]),[0,0,-i*0]),[40 - (i*10), 0, 0]),[0,i*150])];
 buildMeshFromPointLayers(lp, true, true, true,true);
 echo(str(len(lp) * len(lp[0]), " vertices used"));
-'''
+```
 
 ### svgTweenPath demo
 
