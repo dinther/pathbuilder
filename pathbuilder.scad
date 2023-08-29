@@ -60,6 +60,8 @@ module svgShape(path="", _i=-2, _p=undef, _first_CW=undef){
     }
 }
 
+
+
 //  function svgTweenPath(s)
 //
 //  Processes two similar paths where the command sequence is identical but the parameters are different.
@@ -120,7 +122,7 @@ function pb_reflectPntOn(p1=[], pc=[0,0]) = pc + (p1-pc)*-1;
 //
 //  translates points in point list.
 //  pts        (list)  List of 2D or 3D points.
-//  translate  (list)  List of three two numbers representing the 3D vector to translate the points with
+//  translate  (list)  List of three or two numbers representing the 3D vector to translate the points with
 //  return  (list)  List of translated 3D points.
 function pb_translate_pts(pts, translate=[0,0,0])= [for(p=pts)[p[0]+translate[0],p[1]? p[1]+translate[1] : translate[1], p[2]? p[2]+translate[2] : translate[2]]];
 
@@ -341,7 +343,7 @@ function pb_commandListToPath(commandList = []) =
 //  return  (list)  Command list
 //              command (string)    Command identifier
 //              values  (list)      Values associated with the command
-//                  value  (number) Value associated with the command
+//                  value  (number) Value associated with the command   
 function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) = 
     _i>len(s)-1?  _cmds : let(
         //replace all "true" and "false" with 1 or 0
@@ -1155,4 +1157,3 @@ function points() = let(
         data1 = [$pb_pts, concat($pb_post, [[4,len($pb_pts)-1]])],
         points1 = pb_postProcessPathLists([data1])
     ) points1[0];
-
