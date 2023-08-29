@@ -84,7 +84,7 @@ function rotatePoints(pts=[], angles=[0,0,0], z_offset=0, _i=0, _pts=[]) = let(
     ax = angles[0] == undef? 0 : angles[0],
     ay = angles[1] == undef? 0 : angles[1],
     az = angles[2] == undef? 0 : angles[2],
-    npx = rotatePoint([pts[_i][1],0], ax),
+    npx = rotatePoint([pts[_i][1],pts[_i][2],0], ax),
     npx1 = [pts[_i][0],npx[0],npx[1]],
     npy = rotatePoint([npx1[0], npx1[2], npx1[1]], ay),
     npy1 = [npy[0], npx1[1],npy[1]],
