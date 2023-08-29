@@ -7,7 +7,15 @@
 //
 //  By: Paul van Dinther
 
-
+//  function rectPoints(rect=[], div=[], z=undef, center=false)
+//
+//  Generates a list of points describing the requested rectangle. The number of points per size can be controlled. List is 2D if rect contains 2 values otherwise 3D.
+//  rect     (vector) 2D or 3D Defines the size of the rectangle.
+//  return   (list)   List of 2D or 3D points forming a rectangle.
+function rectPoints(rect=[1,1], center=false) = let(
+    x=center? -rect[0] * 0.5 : 0,
+    y=center? -rect[1] * 0.5 : 0,
+    pts = [[0+x,0+y],[0+x,rect[1]+y],[rect[0]+x,rect[1]+y],[rect[0]+x, 0+y]]) rect[2]==undef? pts : appendValueToPoints(pts, rect[2]);
  
 //  function circlePoints(r=undef, d=undef, z=undef)
 //
