@@ -17,12 +17,13 @@ function rectPoints(rect=[1,1], center=false) = let(
     y=center? -rect[1] * 0.5 : 0,
     pts = [[0+x,0+y],[0+x,rect[1]+y],[rect[0]+x,rect[1]+y],[rect[0]+x, 0+y]]) rect[2]==undef? pts : appendValueToPoints(pts, rect[2]);
  
+ 
 //  function circlePoints(r=undef, d=undef, z=undef)
 //
 //  Generates a list of 2D points describing the requested circle. The number of points will depend
 //  on the usual openSCAD $fa, $fs, $fn settings.
 //  will be a 3D point.
-//  The return value is a 3D points list
+
 //  r        (number) Radius of the circle.
 //  d        (number) Diameter of the circle.
 //  z        (number) Z coordinate optional. Causes a 3D point list to be returned.
@@ -34,8 +35,15 @@ function circlePoints(r=undef, d=undef, z=undef) = let(
     _s = 360 / _c
 ) [for(i=[0:_c-1]) let(_cos = cos(i*_s), _sin = sin(i*_s)) z==undef? [_cos * _r, _sin * _r,] : [_cos * _r, _sin * _r, z]];
 
-function appendValueToPoints(pts, value) = [for(pt=pts) concat(pt,[value])];
+//  function appendValueToPoints(pts, value)
+//
+//  Appends a value to every point in the list. Typically used when you want to turn a 2D point list into a 3D point list.
 
+//  pts      (list)   List of points.
+//  value    (number) Value to be apended to every point in the list.
+//  return   (point)  Resulting list of points with the extra value.
+function appendValueToPoints(pts, value) = [for(pt=pts) concat(pt,[value])];
+    
 //  function keep(dataList=[], indexes = [])
 //
 //  Takes any list of data and only returns the fields given by the indexes. This function is also perfect when you want to reorder data.
@@ -57,7 +65,7 @@ function keep(dataList=[], indexes = [], _i=0, _data=[]) = let(
 //
 //  Rotates a 2D point around the z axis relative to the origin. Input can either be a 2D or 3D point.
 //  will be a 3D point.
-//  The return value is a 3D points list
+
 //  pt       (point)  Array with X and Y value.
 //  angle    (number) Angle around which the 2D point is rotated. Angle is in degrees.
 //  return   (point)  Resulting rotated point.
@@ -74,13 +82,13 @@ function rotate(pt, angle) = let (
 //
 //  Rotates a list of points around along   ONE, TWO OR three axis [x, y,z]. Although the input can be a 2D point, the output
 //  will be a 3D point except when the input is a 2D point and rotation is only along the Z axis
-//  The return value is a 3D points list
+
 //  pts      (list)   List of zero or more 2D or 3D points.
 //  angles   (list)   angles along X, Y and Z axis in that order. Angles in degrees.
 //  z_offset (number) moves the final z value by Z-offset.
 //  return   (list)   Rotated list of 3D points.
 
-function rotatePoints(pts=[], angles=[0,0,0], z_offset=0, _i=0, _pts=[]) = let(
+function rotatePoints1(pts=[], angles=[0,0,0], z_offset=0, _i=0, _pts=[]) = let(
     z1 = pts[_i][2]==undef? z_offset :  pts[_i][2] + z_offset,
     ax = angles[0] == undef? 0 : angles[0],
     ay = angles[1] == undef? 0 : angles[1],
@@ -93,7 +101,24 @@ function rotatePoints(pts=[], angles=[0,0,0], z_offset=0, _i=0, _pts=[]) = let(
     npz1 = pts[_i][2]==undef && ax==0 && ay==0? [npz[0], npz[1]] : [npz[0], npz[1],npy1[2]+z1],
     _pts = concat(_pts, [npz1])
     ) _i<len(pts)-1? rotatePoints(pts, angles, z_offset, _i+1, _pts) : _pts;
+
+function rotatePoints(pts=[], angles=[0,0,0], z_offset=0, _i=0, _pts=[]) = let(
+    ax = angles[0] == undef? 0 : angles[0],
+    ay = angles[1] == undef? 0 : angles[1],
+    az = angles[2] == undef? 0 : angles[2],
+    npx = rotatePoint([pts[_i][1],pts[_i][2],0], ax),
+    npx1 = [pts[_i][0],npx[0],npx[1]],
+    npy = rotatePoint([npx1[0], npx1[2], npx1[1]], ay),
+    npy1 = [npy[0], npx1[1],npy[1]],
+    npz = rotatePoint([npy1[0], npy1[1], npy1[2]], az),
+    npz1 = pts[_i][2]==undef && ax==0 && ay==0? [npz[0], npz[1]] : [npz[0], npz[1],npz[2]],
+    _pts = concat(_pts, [npz1])
+    ) _i<len(pts)-1? rotatePoints(pts, angles, z_offset, _i+1, _pts) : translatePoints(_pts,[0,0,z_offset]);
     
+
+//pts = [[40,0,30],[40,0,40],[80,0,40],[80,0,30]];
+//pts1 = rotatePoints(pts, [0,0,0],-30);
+//sp(pts1);
 
 //  translatePoints(pts, scale)
 //
@@ -167,6 +192,9 @@ function offsetPoints(pts, dist) =
   
   
   
+  
+  
+  
 
   
   
@@ -179,12 +207,34 @@ function offsetPoints(pts, dist) =
 //  Helper functions
 
 
+//  function  sp(r)
+//
+//  SP (Show points) to quickly visualise a list of points.
+//
+//  pts     (list)    List of 2D or 3D points.
+//  r       (number)  Radius of the point markers.
+//  color   (string)  Color of the point markers.
+module sp(pts=[], r=1, color="yellow"){
+    for(pt=pts) translate(pt) color(color) sphere(r=r);
+}   
+
 //  function  _pu_segmentsPerCircle(r)
 //
 //  Calculates the number of segments used per circle (per 360 deg) based on circle radius and openSCAD $fn, $fa and $fs settings.
 //  r       (number)  The circle radius for which the number of segments needs to be calculated.
 //  return  (number)  The number of segments that would be used by openSCAD if it would draw the circle.
 function _pu_segmentsPerCircle(r=1) = $fn>0?($fn>=3?$fn:3):ceil(max(min(360/$fa,abs(r)*2*PI/$fs),5));
+
+//  function distanceBetween calculates the distance between two 2D or 3D points
+function distanceBetween(pt1, pt2) = sqrt(pow(pt2[0] - pt1[0], 2) + pow(pt2[1] - pt1[1], 2) + pow(pt2[2]==undef? 0 : pt2[2] - pt1[2]==undef? 0 : pt1[2], 2));
+
+//  function lengthPoints(pts=[])
+//
+//  Calculates the length of a point list by adding up the distances between all points.
+//  this can be 2D or 3D points.
+//  pts       (list)   2D or 3D point list
+//  return    (number) Total length of the path.
+function lengthPoints(pts=[], _i=0, _sum=0) = _i<len(pts)-2? lengthPoints(pts, _i+1, _sum + distanceBetween(pts[_i], pts[_i+1])) : _sum; 
 
 // given two points, a, b, find equation for line that is parallel to line 
 // segment but offset to the right by offset dist
