@@ -5,8 +5,7 @@ use <pointutils.scad>
 $fn = 32;
 
 angle=180;
-start_radius = 40;
-end_radius = 10;
+radius = 30;
 
 //  Building a 2D profile
 //  We define a start shape and end shape and use the svgTweenPath.
@@ -18,8 +17,8 @@ end_shape = "m0,0v5h27.5fillet3V20fillet8H60v-5h-27.5fillet3V0fillet8H0";
 
 //  This is what the shapes looks like
 
-color("blue") polygon(svgPoints(svgTweenPath(start_shape, end_shape, 0))[0]);
-color("red")  polygon(svgPoints(svgTweenPath(start_shape, end_shape, 1))[0]);
+translate([30,40,0]) color("blue") polygon(svgPoints(svgTweenPath(start_shape, end_shape, 0))[0]);
+translate([-30,40,0]) color("red") mirror([-1,0,0]) polygon(svgPoints(svgTweenPath(start_shape, end_shape, 1))[0]);
 
 //  Building the mesh
 
@@ -27,7 +26,7 @@ color("red")  polygon(svgPoints(svgTweenPath(start_shape, end_shape, 1))[0]);
 //  many times inside a loop counting from 0 to 1 in small steps
 //  You see here several manipulation functions nested.
 
-lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(svgPoints(svgTweenPath(start_shape, end_shape,i))[0],[start_radius + (i*(end_radius - start_radius)), 0, 0]),[0,i*-angle,0])];
+lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(svgPoints(svgTweenPath(start_shape, end_shape,i))[0],[radius, 0, 0]),[0,i*-angle,0])];
 buildMeshFromPointLayers(lp, true, true, true,true);
 
 //  Multiply the number of paths and points per path
