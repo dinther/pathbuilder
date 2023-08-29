@@ -9,13 +9,17 @@ start_radius = 40;
 end_radius = 10;
 
 //  Building a 2D profile
-//  svgPoints returns a list of paths but for a
-//  simple enclosed shape there is only one path.
-//  So we grab the one at index 0.
-shape = svgPoints("m0,0v5h27.5fillet3V30fillet8H60v-5h-27.5fillet3V0fillet8H0")[0];
+//  We define a start shape and end shape and use the svgTweenPath.
+//  to generate the path definitions in between. This way we can
+//  keep a consistent radius in the model.
 
-//  This is what it looks like
-color("blue") polygon(shape);
+start_shape = "m0,0v5h27.5fillet3V40fillet8H60v-5h-27.5fillet3V0fillet8H0";
+end_shape = "m0,0v5h27.5fillet3V20fillet8H60v-5h-27.5fillet3V0fillet8H0";
+
+//  This is what the shapes looks like
+
+color("blue") polygon(svgPoints(svgTweenPath(start_shape, end_shape, 0))[0]);
+color("red")  polygon(svgPoints(svgTweenPath(start_shape, end_shape, 1))[0]);
 
 //  Building the mesh
 
@@ -23,7 +27,7 @@ color("blue") polygon(shape);
 //  many times inside a loop counting from 0 to 1 in small steps
 //  You see here several manipulation functions nested.
 
-lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(scalePoints(shape,[1.2-(1*i),1,1]),[start_radius + (i*(end_radius - start_radius)), 0, 0]),[0,i*-angle,0])];
+lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(svgPoints(svgTweenPath(start_shape, end_shape,i))[0],[start_radius + (i*(end_radius - start_radius)), 0, 0]),[0,i*-angle,0])];
 buildMeshFromPointLayers(lp, true, true, true,true);
 
 //  Multiply the number of paths and points per path
