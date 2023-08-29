@@ -1,7 +1,6 @@
 ### TwistedMesh.scad
 PathBuilder, MeshBuilder and pointutils in action together. With these tools you have absolute control over the dimensions and it is FAST. No boolean operations. Meshbuilder just spits out a mesh.
-![image](https://github.com/dinther/pathbuilder/assets/1192916/bc98df98-11b8-48dd-914e-d1989ed8c6f6)
-
+![image](https://github.com/dinther/pathbuilder/assets/1192916/588b3a11-b7cd-40ed-bc5d-cd8ffc9ce3be)
 
 ```
 use <pathbuilder.scad>
@@ -11,8 +10,7 @@ use <pointutils.scad>
 $fn = 32;
 
 angle=180;
-start_radius = 40;
-end_radius = 10;
+radius = 30;
 
 //  Building a 2D profile
 //  We define a start shape and end shape and use the svgTweenPath.
@@ -33,7 +31,7 @@ color("red")  polygon(svgPoints(svgTweenPath(start_shape, end_shape, 1))[0]);
 //  many times inside a loop counting from 0 to 1 in small steps
 //  You see here several manipulation functions nested.
 
-lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(svgPoints(svgTweenPath(start_shape, end_shape,i))[0],[start_radius + (i*(end_radius - start_radius)), 0, 0]),[0,i*-angle,0])];
+lp = [for (i=[0:0.002:1]) rotatePoints(translatePoints(svgPoints(svgTweenPath(start_shape, end_shape,i))[0],[radius, 0, 0]),[0,i*-angle,0])];
 buildMeshFromPointLayers(lp, true, true, true,true);
 
 //  Multiply the number of paths and points per path
