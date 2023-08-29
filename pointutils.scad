@@ -34,7 +34,8 @@ function circlePoints(r=undef, d=undef, z=undef) = let(
     _s = 360 / _c
 ) [for(i=[0:_c-1]) let(_cos = cos(i*_s), _sin = sin(i*_s)) z==undef? [_cos * _r, _sin * _r,] : [_cos * _r, _sin * _r, z]];
 
-    
+function appendValueToPoints(pts, value) = [for(pt=pts) concat(pt,[value])];
+
 //  function keep(dataList=[], indexes = [])
 //
 //  Takes any list of data and only returns the fields given by the indexes. This function is also perfect when you want to reorder data.
