@@ -24,7 +24,7 @@ function circlePoints(r=undef, d=undef, z=undef) = let(
     _r = r!=undef? r : d!=undef? d*0.5 : 1,
     _c = _pu_segmentsPerCircle(_r),
     _s = 360 / _c
-) [for(i=[0:_c-1]) z==undef? [cos(i*_s) * _r, sin(i*_s) * _r,] : [cos(i*_s) * _r, sin(i*_s) * _r, z]];
+) [for(i=[0:_c-1]) let(_cos = cos(i*_s), _sin = sin(i*_s)) z==undef? [_cos * _r, _sin * _r,] : [_cos * _r, _sin * _r, z]];
 
     
 //  function keep(dataList=[], indexes = [])
@@ -53,8 +53,13 @@ function keep(dataList=[], indexes = [], _i=0, _data=[]) = let(
 //  angle    (number) Angle around which the 2D point is rotated. Angle is in degrees.
 //  return   (point)  Resulting rotated point.
 
-function rotatePoint(pt, angle) = angle==0? [pt[0], pt[1]] : pt[2]==undef? [cos(angle) * pt[0] - sin(angle) * pt[1], sin(angle) * pt[0] + cos(angle) * pt[1]] : [cos(angle) * pt[0] - sin(angle) * pt[1], sin(angle) * pt[0] + cos(angle) * pt[1], pt[2]];
-
+function rotatePoint(pt, angle=0) = angle==0? pt : let(_c=cos(angle), _s=sin(angle)) pt[2]==undef? [(_c * pt[0]) + (_s * pt[1]), (_c * pt[1]) - (_s * pt[0])] : [(_c * pt[0]) + (_s * pt[1]), (_c * pt[1]) - (_s * pt[0]), pt[2]];
+function rotate(pt, angle) = let (
+    c = cos(angle),
+    s = sin(angle),
+    nx = (c * pt[0]) + (s * pt[1]),
+    ny = (c * pt[1]) - (s * pt[0])) [nx, ny, z];
+//echo(rotatePoint([0,60],-10));
 
 //  function rotatePoints(pts=[], angles=[0,0,0], z_offset=0)
 //
@@ -90,7 +95,7 @@ function rotatePoints(pts=[], angles=[0,0,0], z_offset=0, _i=0, _pts=[]) = let(
 
 function translatePoints(pts=[], translate=[0,0]) = [for(p=pts)[ for(j=[0:len(p)-1]) translate[j]!=undef? p[j]+translate[j] : p[j]]];
 
-//  scalePoints(pts, scale)
+//  scalePoints(pts=[], scale=[])
 //
 //  Scales points in point list. You can use 2D points on 3D scale vectors and vice versa.
 //  pts       (list)  List of 2D or 3D points.
@@ -98,7 +103,41 @@ function translatePoints(pts=[], translate=[0,0]) = [for(p=pts)[ for(j=[0:len(p)
 //  return    (list)  List of scales points.
 
 function scalePoints(pts=[], scale=[0,0]) = [for(p=pts)[ for(j=[0:len(p)-1]) scale[j]!=undef? p[j]*scale[j] : p[j]]];
- 
+
+//  BETA - maxXDist(pts=[], dist=1)
+//
+//  Inserts additional points when the X distance between two points is greater than the given distance.
+//  The space will then be deviced equally.
+//  pts       (list)    List of 2D or 3D points.
+//  dist      (number)  The maximum distance allowed before dividing starts
+//  return    (list)    Adjusted list of 2D or 3D points.
+
+function maxXDist(pts=[], dist=1, _i=0, _pts=[]) = let(
+    dx = pts[_i+1][0] - pts[_i][0],
+    sx = dist==0? 1 : floor(abs(dx)/dist)+1,
+    seg = sx==1? dx : dx / sx,
+    ipt = sx<0? [for(i=[sx:-1:0]) [pts[_i][0]+ i*seg, pts[_i][1], pts[_i][2]]] : [for(i=[0:sx]) [pts[_i][0]+ i*seg, pts[_i][1], pts[_i][2]]]
+    //e=echo(dx, sx, seg)
+    )_i<len(pts)-1? maxXDist(pts, dist, _i+1, concat(_pts,ipt)) : _pts;
+   
+//  BETA - bendPoints(pts=[], x=0, r=1)
+//
+//  Bends x and z coordinates of the 2D or 3D point list around a circle with offset x and radius r.
+//  pts       (list)    List of 2D or 3D points.
+//  x         (number)  The x offset for the circle center around which the bend radius is projected.
+//  r         (number)  The bend radius used for the bend.
+//  return    (list)    Adjusted list of 2D or 3D points.    
+function bendPoints(pts=[], x=0, r=1) = let(
+    c = 2 * PI *r,
+    degPerUnit = 360 / c,
+    e=echo(degPerUnit),
+    seg = _pu_segmentsPerCircle(r),
+    _pts = maxXDist(pts, c/seg)
+   ) [for (pt=_pts)let(
+    dx = pt[0] - x,
+    d = degPerUnit * dx,
+    np = [sin(d) * r, pt[1], cos(d) * r]
+) [sin(d) * r, pt[1], cos(d) * r]];
 
 //  openSCAD polyline offset routine retrieved from newgroup https://forum.openscad.org/Polygon-Offset-Function-td17186.html
 //
@@ -119,23 +158,7 @@ function offsetPoints(pts, dist) =
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
   
   
   
