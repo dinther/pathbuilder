@@ -1,3 +1,7 @@
+### TwistedMesh
+![image](https://github.com/dinther/pathbuilder/assets/1192916/e2090e37-25cc-45be-b980-2774dfd00027)
+PathBuilder, MeshBuilder and pointutils in action together.
+
 ### svgTweenPath demo
 
 svgTweenPath takes two pathBuilder SVG path strings and interpolates the path values between the start and end shape using a factor variable between 0 and 1. Both SVG path strings must have the same number AND sequence of commands.
