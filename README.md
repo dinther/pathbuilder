@@ -3,7 +3,7 @@
 
 Pathbuilder is a tool for openSCAD that make the creation of complex 2D shapes easier with a syntax similar to the one used for svg path. Pathbuilder supports [the complete svg command set](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d#path_commands) and several extra commands to make the creation of 2d shapes as easy as possible.
 
-You can place filets or Chamfers at any point. Extend lines up to an arbitrary boundary and much more.
+You can place fillets or Chamfers at any point. Extend lines up to an arbitrary boundary and much more.
 
 # Installation
 Although this library has grown to three code units, Pathbuilder is contained in a single .scad file and in has no dependencies on other libraries. Just copy pathbuilder.scad to your openSCAD library folder and put 
