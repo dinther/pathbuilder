@@ -18,7 +18,7 @@ radius = 30;
 //  keep a consistent radius in the model.
 
 start_shape = "m0,0v5h27.5fillet3V40fillet8H60v-5h-27.5fillet3V0fillet8H0";
-end_shape = "m0,0v5h27.5fillet3V20fillet8H60v-5h-27.5fillet3V0fillet8H0";
+end_shape   = "m0,0v5h27.5fillet3V20fillet8H60v-5h-27.5fillet3V0fillet8H0";
 
 //  This is what the shapes looks like
 
