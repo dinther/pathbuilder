@@ -17,7 +17,6 @@ function rectPoints(rect=[1,1], center=false) = let(
     y=center? -rect[1] * 0.5 : 0,
     pts = [[0+x,0+y],[0+x,rect[1]+y],[rect[0]+x,rect[1]+y],[rect[0]+x, 0+y]]) rect[2]==undef? pts : appendValueToPoints(pts, rect[2]);
  
- 
 //  function circlePoints(r=undef, d=undef, z=undef)
 //
 //  Generates a list of 2D points describing the requested circle. The number of points will depend
@@ -184,8 +183,15 @@ function bendPoints(pts=[], x=0, r=1) = let(
 //  return   (list)   Rotated list of 3D points.
 function offsetPoints(pts, dist) = 
   _os_offset_poly(_os_iterative_remove_edges(pts, dist), dist);
-  
-  
+   
+//  Orders the members of each point in the points list and removes or adds members as required.
+//  The return value is a 1D,2D or 3D points list
+//  pts      (list)   List of zero or more 1D, 2D or 3D points.
+//  order    (list)   Index list for member order. [0,1,2] causes no change. [1,0,2] swaps X and Y
+//  defaults (list)   List of member values if none is found. This makes it possible to turn 2D lists into 3D lists
+//  return   (list)   re-ordered list of 1D, 2D or 3D points.
+
+function orderPoints(pts, order=[0,1,2], defaults=[0,0,0]) = [for(pt = pts) [for(i=[0:len(order)-1]) order[i]>=len(pt)? defaults[i] : pt[order[i]]] ];
   
   
   
