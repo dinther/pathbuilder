@@ -2,21 +2,17 @@ use <pathbuilder.scad>
 use <meshbuilder.scad>
 use <pointUtils.scad>
 
-function rotateAroundZ(x, y, z, angle) = let (
-    c = cos(angle),
-    s = sin(angle),
-    nx = (c * x) + (s * y),
-    ny = (c * y) - (s * x)) [nx, ny, z];
+$fn=8;
 
-module taperedScrew(startRadius = 5, endRadius = 2, angle = 0, pitch=2, threadHeightStart=1.5, threadHeightEnd=0.1){
+module taperedScrew(startRadius = 5, endRadius = 2, angle = 0, pitch=2, threadDepthStart=1.5, threadDepthEnd=0.1, threadShapeRatio=0.5){
     segmentsPerCircle = pb_segmentsPerCircle(startRadius);
     zStep = pitch / segmentsPerCircle;
     steps = angle / 360 * segmentsPerCircle;
     angleStep = angle / steps;
     radiusStep = (endRadius - startRadius) / steps;
-    treadStep =  (threadHeightEnd - threadHeightStart) / steps;
-    pl = [for (i=[0:steps])
-        rotatePoints(pts=translatePoints(circlePoints(r=threadHeightStart+(i*treadStep), z=0, $fn=6),[startRadius+(i*radiusStep),0,0]), angles=[0,0,i * angleStep], z_offset = i * zStep)
+    threadDepthStep =  (threadDepthEnd - threadDepthStart) / steps;
+    pl = [for (i=[0:steps]) let(h=threadDepthStart+(i*threadDepthStep))
+        rotatePoints(pts=translatePoints([[0, 0, 0], [radiusStep*segmentsPerCircle, 0, h*threadShapeRatio], [h, 0, h*threadShapeRatio*0.5], [0, 0, 0]],[startRadius+(i*radiusStep),0,0]), angles=[0,0,i * angleStep], z_offset = i * zStep)
     ];
     echo(pl[1]);
     union(){
@@ -26,4 +22,4 @@ module taperedScrew(startRadius = 5, endRadius = 2, angle = 0, pitch=2, threadHe
     
 }
 
-taperedScrew(startRadius=5, endRadius = 0.1, angle=360 * 10, pitch=4, threadHeightStart=1.0, threadHeightEnd=0.1, $fn=128);
+taperedScrew(startRadius=5, endRadius = 0.5, angle=360 * 10, pitch=4, threadDepthStart=1.0, threadDepthEnd=0.0, threadShapeRatio=1, $fn=8);
