@@ -651,7 +651,7 @@ module m(x=0, y=0, a=0){
     data = _pb_line([],true, is_list(x)? x: [x,y],a,true);
     $pb_pts = data[0];
     $pb_post = data[1];
-    $pb_angle = data[2];
+    $pb_angle = a;
     if (pb_do_render($children, parent_module(0))) pb_draw();
     children(); 
 }
@@ -673,7 +673,7 @@ module M(x=0, y=0, a=0){
     data = _pb_line([],false, is_list(x)? x : [x,y],a,true);
     $pb_pts = data[0];
     $pb_post = data[1];
-    $pb_angle = data[2];
+    $pb_angle = a;
 }
 
 //  function _pb_horz(last, rel, args, angle)
@@ -780,7 +780,7 @@ function _pb_line(pts=[], rel=false, args=[], angle, move=false, _i=0, _g, _r=[]
     _g = _g==undef? pb_groupsOf(2,args)[1] : _g,
     np = rel? _l+_g[_i] : _g[_i],
     _r = np==_l&&pts!=[]&&_r!=[]? _r : concat(_r, [np])
-    ) _i>=len(_g)-1? [_r,move?[[0,0,0]]:[],pb_calcExitAngle(concat([_l],_r),angle),[[],[]]] : _pb_line(pts, rel, args, angle, move, _i+1, _g, _r);
+    ) _i>=len(_g)-1? [_r,move?[[0,0,0]]:[],move? angle: pb_calcExitAngle(concat([_l],_r),angle),[[],[]]] : _pb_line(pts, rel, args, angle, move, _i+1, _g, _r);
 
 //  module l
 //
