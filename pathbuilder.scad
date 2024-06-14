@@ -40,7 +40,7 @@ function svgPoints(path, z=undef) = let(
 //  Processes a SVG path string and returns a 2D polygon.
 //  path       (list) String compliant with SVG path syntax plus the extra commands introduced in pathBuilder.
 //  return  (polygon) polygon can be further handled by any openSCAD command.
-module svgShape(path="", _i=-2, _p=undef, _first_CW=undef){
+module svgShape(path="", _i=-2, _p=undef, _first_CW=undef, $pb_spline=10){
     _p = _p==undef? svgPoints(path) : _p;
     l = len(_p);
     _first_CW = _i<-1? pb_is_CW(_p[0]) : _first_CW;
@@ -644,7 +644,7 @@ function pb_do_render(children, parent_module_name) = let(
 //  x     (number)  x value of the 2D start point initialisation. Default to zero if not provided.
 //  y     (number)  y value of the 2D start point initialisation. Default to zero if not provided.
 //  a     (number)  angle of the path initialisation. Default to zero if not provided.
-module m(x=0, y=0, a=0){
+module m(x=0, y=0, a=0, $pb_spline=10){
     $pb_fn = $fn;
     $pb_fa=$fa;
     $pb_fs=$fs;
@@ -662,7 +662,7 @@ module m(x=0, y=0, a=0){
 //  x     (number)  x value of the 2D start point initialisation. Default to zero if not provided.
 //  y     (number)  y value of the 2D start point initialisation. Default to zero if not provided.
 //  a     (number)  angle of the path initialisation. Default to zero if not provided.
-module M(x=0, y=0, a=0){
+module M(x=0, y=0, a=0, $pb_spline=10){
     if (pb_do_render($children, parent_module(0))){
         pb_draw();
     }
@@ -863,7 +863,7 @@ function _pb_smooth_cubic(last=[], args=[], rel=false, angle, ctrl_pts, _i=0, _g
 
 module s(cx2, cy2, x, y, n=$pb_spline){
     args = is_num(cx2)? [cx2, cy2, x, y] : cx2;
-    data = _pb_smooth_cubic(pb_last($pb_pts), args, true, $pb_angle, $pb_ctrl_pts);
+    data = _pb_smooth_cubic(pb_last($pb_pts), args, true, $pb_angle, $pb_ctrl_pts,$pb_spline);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
@@ -873,7 +873,7 @@ module s(cx2, cy2, x, y, n=$pb_spline){
 
 module S(cx2, cy2, x, y, n=$pb_spline){
     args = is_num(cx2)? [cx2, cy2, x, y] : cx2;
-    data = _pb_smooth_cubic(pb_last($pb_pts), args, false, $pb_angle, $pb_ctrl_pts);
+    data = _pb_smooth_cubic(pb_last($pb_pts), args, false, $pb_angle, $pb_ctrl_pts,$pb_spline);
     $pb_pts = concat($pb_pts, data[0]);
     $pb_angle = data[2];
     $pb_ctrl_pts = data[3];
