@@ -346,33 +346,34 @@ function pb_commandListToPath(commandList = []) =
 //                  value  (number) Value associated with the command   
 function pb_tokenizeSvgPath(s, _i=0, _cmds=[], _cmd=[], _w = "", _d=0) = 
     _i>len(s)-1?  _cmds : let(
-        //replace all "true" and "false" with 1 or 0
-        //s = replace(replace(replace(replace(replace(replace(s,"FALSE", "0"),"False", "0"),"false", "0"),"TRUE", "1"),"True", "1"),"true", "1"),
         l=len(s), c1 = s[_i], a1 = ord(c1), a2 = ord(s[min(l-1,_i+1)]), _d = a2==46? _d+1 : _d,
-        //   0=number            1=sign                3=sep                 4=dot       2=char
-        t1 = a1>47 && a1<58? 0 : a1==43 || a1==45? 1 : a1==32 || a1==44? 3 : a1==46? 4 : 2,
-        //   5=end        0=number            1=sign                3=sep                 4=dot       2=char
-        t2 = _i==l-1? 5 : (a2>47 && a2<58)? 0 : a2==43 || a2==45? 1 : a2==32 || a2==44? 3 : a2==46? 4 : 2,
+        //   0=number            1=sign                3=sep                 4=dot       5=exp                    2=char
+        t1 = a1>47 && a1<58? 0 : a1==43 || a1==45? 1 : a1==32 || a1==44? 3 : a1==46? 4 : (a1==101 || a1==69)? 5 : 2,
+        //   6=end        0=number            1=sign                3=sep                 4=dot         5=exp                    2=char
+        t2 = _i==l-1? 6 : (a2>47 && a2<58)? 0 : a2==43 || a2==45? 1 : a2==32 || a2==44? 3 : a2==46? 4 : (a2==101 || a2==69)? 5 : 2,
         c =
         t1==2&&t2==0? 1 :           //  char to num   "m 0 0 cha
         t1==2&&t2==3? 2 :           //  char to sep
         t1==2&&t2==1? 3 :           //  char to sign
         t1==2&&t2==4? 4 :           //  char to dot
-        t1==2&&t2==5? 5 :           //  char to end
+        t1==2&&t2==6? 5 :           //  char to end
         t1==0&&t2==2? 6 :           //  num to char
         t1==0&&t2==3? 7 :           //  num to sep
         t1==0&&t2==1? 8 :           //  num to sign
-        t1==0&&t2==1? 9 :           //  num to end
+        t1==0&&t2==6? 9 :           //  num to end
         t1==0&&t2==4&&_d>1? 11 :    //  num to next dot
+        t1==5&&t2==0? 0 :           //  exp to num
+        t1==5&&t2==1? 0 :           //  exp to sign
         0,                          //  not important
         dc = c==6 || c==7 || c==8 || c==9? 0 : _d,
         //w = t1!=3&&(c1!="z" && c1!="Z)? str(_w,c1) : _w,
         w = t1!=3? str(_w,c1) : _w,
         //w = t1!=3? str(_w,c1) : _w,
-        _cmd = c>0||t2==5? t1==2? [w,[]] : [_cmd[0],concat(_cmd[1],[pb_parseNum(w)])] : _cmd,
-        _cmds = (t1==0 || t1==3 || t2==5) && (t2==2|| t2==5)? concat(_cmds, [_cmd]) : _cmds,
+        _cmd = c>0||t2==6? t1==2? [w,[]] : [_cmd[0],concat(_cmd[1],[pb_parseNum(w)])] : _cmd,
+        _cmds = (t1==0 || t1==3 || t2==6) && (t2==2|| t2==6)? concat(_cmds, [_cmd]) : _cmds,
         _w = c>0? "" : w
-    ) pb_tokenizeSvgPath(s=s, _i=_i+1, _cmds=_cmds, _cmd=_cmd, _w=_w, _d=dc);
+    )pb_tokenizeSvgPath(s=s, _i=_i+1, _cmds=_cmds, _cmd=_cmd, _w=_w, _d=dc);
+
 
 //  function checks command list and splits command list to multiple command lists for every m or M command
 //  
