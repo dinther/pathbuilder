@@ -21,7 +21,7 @@ svgShape("m 0 0chamfer8h20fillet2v20fillet10h20v-10fillet2l35 20fillet2l-35 20fi
 Note that you can always add $fn or other global openSCAD parameters exclusivly into any function or module. 
 You should see this.
 
-![Image of right_arrow](images/pathbuilder_right%20arrow.png)
+![image](https://github.com/user-attachments/assets/f95b67f1-01f8-4429-8c9a-97c9d5168f60)
 
 # flexible
 
