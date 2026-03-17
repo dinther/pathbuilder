@@ -5,6 +5,8 @@ Pathbuilder is a tool for openSCAD that make the creation of complex 2D shapes e
 
 You can place fillets or Chamfers at any point. Extend lines up to an arbitrary boundary and much more.
 
+Generated documentation here: https://deepwiki.com/dinther/pathbuilder
+
 # Installation
 Although this library has grown to three code units, Pathbuilder is contained in a single .scad file and in has no dependencies on other libraries. Just copy pathbuilder.scad to your openSCAD library folder and put 
 ```
