@@ -120,12 +120,21 @@ function pb_reflectPntOn(p1=[], pc=[0,0]) = pc + (p1-pc)*-1;
 
 //  pb_translate_pts(pts, translate)
 //
-//  translates points in point list.
+//  translates points in point list. A 2D translate turns 3D points into 2D points by dropping the last value.
+//  A 3D translate on a 2D point will use the third translate value as the third value and turn the point into 3D.
 //  pts        (list)  List of 2D or 3D points.
 //  translate  (list)  List of three or two numbers representing the 3D vector to translate the points with
 //  return  (list)  List of translated 3D points.
-function pb_translate_pts(pts, translate=[0,0,0])= [for(p=pts)[p[0]+translate[0],p[1]? p[1]+translate[1] : translate[1], p[2]? p[2]+translate[2] : translate[2]]];
+function pb_translate_pts(pts, translate=[0,0,0])= translate[2]!=undef? [for(p=pts)[p[0]+translate[0],p[1]? p[1]+translate[1] : translate[1], p[2]? p[2]+translate[2] : translate[2]]] : [for(p=pts)[p[0]+translate[0],p[1]? p[1]+translate[1] : translate[1]]];
 
+//  pb_scale_pts(pts, translate)
+//
+//  scales points in point list. A 2D scale turns 3D points into 2D points by dropping the last value.abs
+//  A 3D scale on a 2D point will use the third scale value as the third value and turn the point into 3D.
+//  pts     (list)  List of 2D or 3D points.
+//  scale   (list)  List of two or three scale values for each axis x,y, and z
+//  return  (list)  List of translated 2D or 3D points.
+function pb_scale_pts(pts, scale=[1,1,1])= scale[2]!=undef? [for(p=pts)[p[0]*scale[0],p[1]? p[1]*scale[1] : scale[1], p[2]!=undef? p[2]*scale[2] : scale[2]]] : [for(p=pts)[p[0]*scale[0],p[1]? p[1]*scale[1] : scale[1]]];
 
 //  function  pb_segmentsPerCircle(r)
 //
